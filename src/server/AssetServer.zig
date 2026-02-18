@@ -1,19 +1,41 @@
 const std = @import("std");
 
-const WebAssets = @import("WebAssets.zig");
+const AssetStore = @import("AssetStore.zig");
 const server_mod = @import("http_server.zig");
 
 const Self = @This();
 
 const AssetHandler = struct {
-    assets: *WebAssets,
+    assets: *AssetStore,
 
     pub fn onRequest(self: *AssetHandler, req: *std.http.Server.Request) !void {
-        try req.respond(self.assets.data, .{
+        var path: []const u8 = req.head.target;
+        if (std.mem.eql(u8, path, "/")) {
+            path = "/index.html";
+        }
+
+        std.debug.print("{s}\n", .{path});
+        const asset = self.assets.getAsset(path) orelse {
+            try respondUnknown(req);
+            return;
+        };
+
+        try req.respond(asset.data, .{
             .status = .ok,
             .extra_headers = &[_]std.http.Header{.{
                 .name = "Content-Type",
-                .value = "text/plain",
+                // Get real mime type
+                .value = asset.mime_type,
+            }},
+        });
+    }
+
+    fn respondUnknown(req: *std.http.Server.Request) !void {
+        try req.respond("404 Page not found", .{
+            .status = .ok,
+            .extra_headers = &[_]std.http.Header{.{
+                .name = "Content-Type",
+                .value = "text/html",
             }},
         });
     }
@@ -24,10 +46,10 @@ const AssetHTTPServer = server_mod.HTTPServer(AssetHandler);
 allocator: std.mem.Allocator,
 host: []const u8,
 port: u16,
-assets: *WebAssets,
+assets: *AssetStore,
 server_thread: ?std.Thread = null,
 
-pub fn init(allocator: std.mem.Allocator, host: []const u8, port: u16, assets: *WebAssets) !Self {
+pub fn init(allocator: std.mem.Allocator, host: []const u8, port: u16, assets: *AssetStore) !Self {
     return .{
         .allocator = allocator,
         .host = host,

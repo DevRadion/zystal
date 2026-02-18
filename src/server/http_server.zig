@@ -1,0 +1,53 @@
+const std = @import("std");
+const net = std.Io.net;
+
+// Basic abstraction layer over std.http to make it easier to use
+pub fn HTTPServer(comptime Handler: type) type {
+    return struct {
+        const Self = @This();
+
+        io: std.Io,
+        address: net.IpAddress,
+        server_handle: net.Server,
+        handler: *Handler,
+
+        pub fn init(io: std.Io, host: []const u8, port: u16, handler: *Handler) !Self {
+            return .{
+                .io = io,
+                .address = try net.IpAddress.parseIp4(host, port),
+                .server_handle = undefined,
+                .handler = handler,
+            };
+        }
+
+        pub fn listen(self: *Self) !void {
+            self.server_handle = try net.IpAddress.listen(
+                self.address,
+                self.io,
+                net.IpAddress.ListenOptions{},
+            );
+
+            while (true) {
+                try self.handleConnection();
+            }
+        }
+
+        fn handleConnection(self: *Self) !void {
+            const stream = try self.server_handle.accept(self.io);
+            defer stream.close(self.io);
+
+            var rbuf: [4096]u8 = undefined;
+            var reader = stream.reader(self.io, &rbuf);
+
+            var wbuf: [4096]u8 = undefined;
+            var writer = stream.writer(self.io, &wbuf);
+
+            var server = std.http.Server.init(&reader.interface, &writer.interface);
+
+            // For now - just return, forget about it...
+            var req = server.receiveHead() catch return;
+
+            try self.handler.onRequest(&req);
+        }
+    };
+}

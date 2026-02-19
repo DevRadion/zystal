@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const AssetStore = @import("AssetStore.zig");
+const AssetStore = @import("../assets/AssetStore.zig");
 const server_mod = @import("http_server.zig");
 
 const Self = @This();

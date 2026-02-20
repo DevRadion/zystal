@@ -25,7 +25,7 @@ const AssetHandler = struct {
             .extra_headers = &[_]std.http.Header{.{
                 .name = "Content-Type",
                 // Get real mime type
-                .value = asset.mime_type,
+                .value = asset.mime_type.rawName(),
             }},
         });
     }

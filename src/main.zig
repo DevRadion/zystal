@@ -1,9 +1,9 @@
 const std = @import("std");
 const WebView = @import("webview").WebView;
 const http = std.http;
-const AssetReader = @import("assets/AssetReader.zig");
 const AssetServer = @import("server/AssetServer.zig");
 const AssetStore = @import("assets/AssetStore.zig");
+const asset_gen = @import("assets_gen");
 
 fn createWebView() !WebView {
     const w = WebView.create(false, null);
@@ -25,7 +25,7 @@ fn createAssetServer(allocator: std.mem.Allocator, assets: *AssetStore) !AssetSe
 pub fn main(init: std.process.Init) !void {
     const allocator = init.gpa;
 
-    // src/frontend/test/dist
+    std.debug.print("Content: {s}", .{asset_gen.asset_files[0].data});
 
     var assets = AssetStore.init(allocator);
     const webview = try createWebView();

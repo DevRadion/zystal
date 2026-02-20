@@ -25,9 +25,12 @@ fn createAssetServer(allocator: std.mem.Allocator, assets: *AssetStore) !AssetSe
 pub fn main(init: std.process.Init) !void {
     const allocator = init.gpa;
 
-    std.debug.print("Content: {s}", .{asset_gen.asset_files[0].data});
-
     var assets = AssetStore.init(allocator);
+    for (asset_gen.asset_files) |asset_file| {
+        std.debug.print("Storing: {s}\n", .{asset_file.path});
+        try assets.storeAsset(asset_file.path, asset_file.data);
+    }
+
     const webview = try createWebView();
     var server = try createAssetServer(allocator, &assets);
     try server.start();

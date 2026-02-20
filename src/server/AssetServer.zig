@@ -14,7 +14,7 @@ const AssetHandler = struct {
             path = "/index.html";
         }
 
-        std.debug.print("{s}\n", .{path});
+        std.debug.print("request resource: {s}\n", .{path});
         const asset = self.assets.getAsset(path) orelse {
             try respondUnknown(req);
             return;

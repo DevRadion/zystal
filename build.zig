@@ -12,19 +12,14 @@ pub fn build(b: *std.Build) void {
     // ----------------------------------------------------------------------------------------------
     // Options setup
     const options = b.addOptions();
-    // Source-Type
     const source_type_option = b.option(
         SourceType,
         "source_type",
-        "Determines the type of frontend source (BuiltAssets | DevServer)",
-    ) orelse .built_assets;
+        "Determines the type of frontend source (built_assets | dev_server)",
+    ) orelse .dev_server;
 
-    options.addOption(
-        SourceType,
-        "source_type",
-        source_type_option,
-    );
-    // Frontend built assets folder
+    options.addOption(SourceType, "source_type", source_type_option);
+
     const frontend_assets_path = b.option(
         []const u8,
         "assets_path",
@@ -32,84 +27,60 @@ pub fn build(b: *std.Build) void {
     );
     options.addOption(?[]const u8, "assets_path", frontend_assets_path);
 
-    // Options logs
-    if (source_type_option == .built_assets and frontend_assets_path == null) {
-        std.debug.print("-assets_path would be ignored when -source_type=dev_server set\n", .{});
+    if (source_type_option == .dev_server and frontend_assets_path != null) {
+        std.debug.print("-assets_path is ignored when -source_type=dev_server is set\n", .{});
     }
 
     // ----------------------------------------------------------------------------------------------
-    // RootModule/Exe
-    const mod = b.addModule("zystal", .{
+    // Root module
+    const zystal_mod = b.addModule("zystal", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
+        .optimize = optimize,
     });
-
-    const exe = b.addExecutable(.{
-        .name = "zystal",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/main.zig"),
-            .target = target,
-            .optimize = optimize,
-            .imports = &.{
-                .{ .name = "zystal", .module = mod },
-            },
-        }),
-    });
-    exe.root_module.addOptions("build_options", options);
+    zystal_mod.addOptions("build_options", options);
 
     // ----------------------------------------------------------------------------------------------
-    // Asset gen
-    if (source_type_option == .built_assets) {
-        if (frontend_assets_path) |path| {
-            const asset_gen_mod = makeAssetGenModule(b, path);
-            exe.root_module.addImport("assets_gen", asset_gen_mod);
-        } else {
+    // Asset module
+    const assets_gen_mod = blk: {
+        if (source_type_option == .built_assets) {
+            if (frontend_assets_path) |path| {
+                break :blk makeAssetGenModule(b, path);
+            }
             std.debug.panic("You should add -assets_path option for when -source_type=built_assets\n", .{});
         }
-    }
+        break :blk makeEmptyAssetsModule(b);
+    };
+    zystal_mod.addImport("assets_gen", assets_gen_mod);
 
     // ----------------------------------------------------------------------------------------------
     // Dependencies
-    // - WebView -
     const webview = b.dependency("webview", .{
         .target = target,
         .optimize = optimize,
     });
-    exe.root_module.addImport("webview", webview.module("webview"));
-    exe.root_module.linkLibrary(webview.artifact("webviewStatic"));
+    zystal_mod.addImport("webview", webview.module("webview"));
 
     // ----------------------------------------------------------------------------------------------
-    // CMD's
-    b.installArtifact(exe);
-
-    const run_step = b.step("run", "Run the app");
-
-    const run_cmd = b.addRunArtifact(exe);
-    run_step.dependOn(&run_cmd.step);
-
-    run_cmd.step.dependOn(b.getInstallStep());
-
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
+    // Library artifact
+    const static_lib = b.addLibrary(.{
+        .linkage = .static,
+        .name = "zystal",
+        .root_module = zystal_mod,
+    });
+    static_lib.root_module.linkLibrary(webview.artifact("webviewStatic"));
+    b.installArtifact(static_lib);
 
     // ----------------------------------------------------------------------------------------------
     // Tests
     const mod_tests = b.addTest(.{
-        .root_module = mod,
+        .root_module = zystal_mod,
     });
 
     const run_mod_tests = b.addRunArtifact(mod_tests);
 
-    const exe_tests = b.addTest(.{
-        .root_module = exe.root_module,
-    });
-
-    const run_exe_tests = b.addRunArtifact(exe_tests);
-
     const test_step = b.step("test", "Run tests");
     test_step.dependOn(&run_mod_tests.step);
-    test_step.dependOn(&run_exe_tests.step);
 }
 
 fn makeAssetGenModule(b: *std.Build, frontend_assets_path: []const u8) *std.Build.Module {
@@ -130,4 +101,18 @@ fn makeAssetGenModule(b: *std.Build, frontend_assets_path: []const u8) *std.Buil
     asset_gen_run.addArg(frontend_assets_path);
 
     return assets_gen_mod;
+}
+
+fn makeEmptyAssetsModule(b: *std.Build) *std.Build.Module {
+    const generated = b.addWriteFiles().add("assets_generated.zig",
+        \\pub const AssetFile = struct {
+        \\    path: []const u8,
+        \\    data: []const u8,
+        \\};
+        \\pub const asset_files = [_]AssetFile{};
+    );
+
+    return b.createModule(.{
+        .root_source_file = generated,
+    });
 }

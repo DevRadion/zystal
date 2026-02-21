@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const AssetStore = @import("../assets/AssetStore.zig");
+const ServerConfig = @import("../models/ServerConfig.zig");
 const server_mod = @import("http_server.zig");
 
 const Self = @This();
@@ -14,7 +15,6 @@ const AssetHandler = struct {
             path = "/index.html";
         }
 
-        std.debug.print("request resource: {s}\n", .{path});
         const asset = self.assets.getAsset(path) orelse {
             try respondUnknown(req);
             return;
@@ -44,17 +44,17 @@ const AssetHandler = struct {
 const AssetHTTPServer = server_mod.HTTPServer(AssetHandler);
 
 allocator: std.mem.Allocator,
-host: []const u8,
-port: u16,
-assets: *AssetStore,
+config: ServerConfig,
+asset_store: AssetStore,
 server_thread: ?std.Thread = null,
+is_running: std.atomic.Value(bool),
 
-pub fn init(allocator: std.mem.Allocator, host: []const u8, port: u16, assets: *AssetStore) !Self {
+pub fn init(allocator: std.mem.Allocator, config: ServerConfig, asset_store: AssetStore) !Self {
     return .{
         .allocator = allocator,
-        .host = host,
-        .port = port,
-        .assets = assets,
+        .config = config,
+        .asset_store = asset_store,
+        .is_running = .init(false),
     };
 }
 
@@ -64,6 +64,15 @@ pub fn start(self: *Self) !void {
         Self.threadMain,
         .{self},
     );
+}
+
+pub fn deinit(self: *Self) void {
+    self.is_running.store(false, .release);
+    std.debug.print("stopping server thread\n", .{});
+}
+
+pub fn stop(self: *Self) void {
+    self.is_running.store(false, .release);
 }
 
 pub fn wait(self: *Self) void {
@@ -76,12 +85,13 @@ pub fn threadMain(self: *Self) !void {
 
     const io = threaded_io.io();
 
-    var handler = AssetHandler{ .assets = self.assets };
+    var handler = AssetHandler{ .assets = &self.asset_store };
     var http_server = try AssetHTTPServer.init(
         io,
-        self.host,
-        self.port,
+        self.config.host,
+        self.config.port,
         &handler,
+        &self.is_running,
     );
     try http_server.listen();
 }

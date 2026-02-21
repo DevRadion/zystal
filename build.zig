@@ -32,33 +32,10 @@ pub fn build(b: *std.Build) void {
     );
     options.addOption(?[]const u8, "assets_path", frontend_assets_path);
 
-    // Options validation
+    // Options logs
     if (source_type_option == .built_assets and frontend_assets_path == null) {
-        std.debug.panic("You should add -assets_path option for when -source_type=built_assets\n", .{});
-    } else if (source_type_option == .dev_server and frontend_assets_path != null) {
         std.debug.print("-assets_path would be ignored when -source_type=dev_server set\n", .{});
     }
-
-    // ----------------------------------------------------------------------------------------------
-    // Asset gen
-    // I think we should skip this part of assets gen if source_type is DevServer
-    // I could also inject SourceType option in asset_gen to skip it, or it's better to pass more explicit option
-    // like "skip_gen" or entirely exclude this step during build time
-    const asset_gen_exe = b.addExecutable(.{
-        .name = "asset_gen",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("tools/asset_gen.zig"),
-            .target = b.graph.host,
-        }),
-    });
-
-    const asset_gen_run = b.addRunArtifact(asset_gen_exe);
-    const generated_asset_file = asset_gen_run.addOutputFileArg("assets_generated.zig");
-    const assets_gen_mod = b.createModule(.{
-        .root_source_file = generated_asset_file,
-    });
-    // TODO: - Make it dynamic using options
-    asset_gen_run.addArg("frontend/dist");
 
     // ----------------------------------------------------------------------------------------------
     // RootModule/Exe
@@ -75,11 +52,21 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "zystal", .module = mod },
-                .{ .name = "assets_gen", .module = assets_gen_mod },
             },
         }),
     });
     exe.root_module.addOptions("build_options", options);
+
+    // ----------------------------------------------------------------------------------------------
+    // Asset gen
+    if (source_type_option == .built_assets) {
+        if (frontend_assets_path) |path| {
+            const asset_gen_mod = makeAssetGenModule(b, path);
+            exe.root_module.addImport("assets_gen", asset_gen_mod);
+        } else {
+            std.debug.panic("You should add -assets_path option for when -source_type=built_assets\n", .{});
+        }
+    }
 
     // ----------------------------------------------------------------------------------------------
     // Dependencies
@@ -123,4 +110,24 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run tests");
     test_step.dependOn(&run_mod_tests.step);
     test_step.dependOn(&run_exe_tests.step);
+}
+
+fn makeAssetGenModule(b: *std.Build, frontend_assets_path: []const u8) *std.Build.Module {
+    const asset_gen_exe = b.addExecutable(.{
+        .name = "asset_gen",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("tools/asset_gen.zig"),
+            .target = b.graph.host,
+        }),
+    });
+
+    const asset_gen_run = b.addRunArtifact(asset_gen_exe);
+    const generated_asset_file = asset_gen_run.addOutputFileArg("assets_generated.zig");
+    const assets_gen_mod = b.createModule(.{
+        .root_source_file = generated_asset_file,
+    });
+
+    asset_gen_run.addArg(frontend_assets_path);
+
+    return assets_gen_mod;
 }

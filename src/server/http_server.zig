@@ -10,14 +10,26 @@ pub fn HTTPServer(comptime Handler: type) type {
         address: net.IpAddress,
         server_handle: net.Server,
         handler: *Handler,
+        is_running: *std.atomic.Value(bool),
 
-        pub fn init(io: std.Io, host: []const u8, port: u16, handler: *Handler) !Self {
+        pub fn init(
+            io: std.Io,
+            host: []const u8,
+            port: u16,
+            handler: *Handler,
+            is_running: *std.atomic.Value(bool),
+        ) !Self {
             return .{
                 .io = io,
                 .address = try net.IpAddress.parseIp4(host, port),
                 .server_handle = undefined,
                 .handler = handler,
+                .is_running = is_running,
             };
+        }
+
+        pub fn deinit(self: *Self) void {
+            self.server_handle.deinit(self.io);
         }
 
         pub fn listen(self: *Self) !void {
@@ -27,9 +39,11 @@ pub fn HTTPServer(comptime Handler: type) type {
                 net.IpAddress.ListenOptions{},
             );
 
-            while (true) {
+            self.is_running.store(true, .release);
+            while (self.is_running.load(.acquire)) {
                 try self.handleConnection();
             }
+            std.debug.print("Server is stopped\n", .{});
         }
 
         fn handleConnection(self: *Self) !void {

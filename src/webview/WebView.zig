@@ -37,6 +37,18 @@ pub fn registerFunc(self: *Self, func_name: []const u8, comptime handler: anytyp
     try self.web_view_c.bind(func_name_sentinel, wrapBindingHandler(handler), self);
 }
 
+pub fn registerDecls(self: *Self, comptime owner: anytype) !void {
+    const type_info = @typeInfo(owner).@"struct";
+
+    inline for (type_info.decls) |decl| {
+        const decl_value = @field(owner, decl.name);
+        if (@typeInfo(@TypeOf(decl_value)) == .@"fn") {
+            log.debug("{s} - Registering func: {s}\n", .{ @typeName(owner), decl.name });
+            try self.registerFunc(decl.name, decl_value);
+        }
+    }
+}
+
 pub fn run(self: Self) !void {
     try self.web_view_c.run();
 }

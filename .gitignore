@@ -2,3 +2,4 @@ zig-out/
 zig-pkg/
 .zig-cache
 src/frontend/
+.DS_Store

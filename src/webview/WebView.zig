@@ -8,8 +8,7 @@ const WindowConfig = @import("../models/WindowConfig.zig");
 pub const EventHandlerFunc = fn ([]const u8) void;
 
 allocator: std.mem.Allocator,
-// Underlying webview abstraction over C implementation
-web_view_c: web_view_c_mod.WebView,
+webview_c: web_view_c_mod.WebView,
 
 pub fn build(allocator: std.mem.Allocator, config: WindowConfig) !Self {
     const w = web_view_c_mod.WebView.create(config.dev_tools, null);
@@ -22,41 +21,28 @@ pub fn build(allocator: std.mem.Allocator, config: WindowConfig) !Self {
 
     return .{
         .allocator = allocator,
-        .web_view_c = w,
+        .webview_c = w,
     };
 }
 
 pub fn load(self: Self, host: []const u8) !void {
     const host_term: [:0]const u8 = @ptrCast(host);
-    try self.web_view_c.navigate(host_term);
+    try self.webview_c.navigate(host_term);
 }
 
 pub fn registerFunc(self: *Self, func_name: []const u8, comptime handler: anytype) !void {
     const func_name_sentinel: [:0]const u8 = @ptrCast(func_name);
-
-    try self.web_view_c.bind(func_name_sentinel, wrapBindingHandler(handler), self);
-}
-
-pub fn registerDecls(self: *Self, comptime owner: anytype) !void {
-    const type_info = @typeInfo(owner).@"struct";
-
-    inline for (type_info.decls) |decl| {
-        const decl_value = @field(owner, decl.name);
-        if (@typeInfo(@TypeOf(decl_value)) == .@"fn") {
-            log.debug("{s} - Registering func: {s}\n", .{ @typeName(owner), decl.name });
-            try self.registerFunc(decl.name, decl_value);
-        }
-    }
+    try self.webview_c.bind(func_name_sentinel, wrapBindingHandler(handler), self);
 }
 
 pub fn run(self: Self) !void {
-    try self.web_view_c.run();
+    try self.webview_c.run();
 }
 
 pub fn deinit(self: Self) void {
     for (self.bind_ctxs.items) |*ctx| self.allocator.destroy(ctx);
     self.bind_ctxs.deinit();
-    self.web_view_c.destroy() catch return;
+    self.webview_c.destroy() catch return;
 }
 
 // Private

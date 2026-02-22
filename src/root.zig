@@ -79,6 +79,18 @@ pub fn start(self: *Self) !void {
     }
 }
 
+pub fn registerDecls(self: *Self, comptime owner: anytype) !void {
+    const type_info = @typeInfo(owner).@"struct";
+
+    inline for (type_info.decls) |decl| {
+        const decl_value = @field(owner, decl.name);
+        if (@typeInfo(@TypeOf(decl_value)) == .@"fn") {
+            log.debug("{s} - Registering func: {s}\n", .{ @typeName(owner), decl.name });
+            try self.webview.registerFunc(decl.name, decl_value);
+        }
+    }
+}
+
 pub fn deinit(self: *Self) void {
     self.asset_server.deinit();
     self.webview.deinit();

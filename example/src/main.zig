@@ -17,6 +17,6 @@ pub fn main(init: std.process.Init) !void {
     try zystal.start();
 }
 
-fn handler(args: []const u8) void {
-    std.debug.print("Event -> {s}\n", .{args});
+fn handler(param1: []const u8, param2: u32) void {
+    std.debug.print("Event -> {s} {d}\n", .{ param1, param2 });
 }

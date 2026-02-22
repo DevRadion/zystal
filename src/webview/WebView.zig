@@ -2,16 +2,18 @@ const Self = @This();
 
 const std = @import("std");
 const log = @import("../log.zig");
-const web_view_c_mod = @import("webview");
+const webview_c_mod = @import("webview");
 const WindowConfig = @import("../models/WindowConfig.zig");
+const BindManager = @import("BindManager.zig");
 
 pub const EventHandlerFunc = fn ([]const u8) void;
 
 allocator: std.mem.Allocator,
-webview_c: web_view_c_mod.WebView,
+webview_c: webview_c_mod.WebView,
+bind_manager: BindManager,
 
 pub fn build(allocator: std.mem.Allocator, config: WindowConfig) !Self {
-    const w = web_view_c_mod.WebView.create(config.dev_tools, null);
+    const w = webview_c_mod.WebView.create(config.dev_tools, null);
 
     try w.setSize(config.window_size.width, config.window_size.height, .none);
     // Maybe it's better to use dupeZ here to prevent it from crashing from unknown memory layout
@@ -22,6 +24,7 @@ pub fn build(allocator: std.mem.Allocator, config: WindowConfig) !Self {
     return .{
         .allocator = allocator,
         .webview_c = w,
+        .bind_manager = BindManager.init(allocator, w),
     };
 }
 
@@ -31,8 +34,11 @@ pub fn load(self: Self, host: []const u8) !void {
 }
 
 pub fn registerFunc(self: *Self, func_name: []const u8, comptime handler: anytype) !void {
-    const func_name_sentinel: [:0]const u8 = @ptrCast(func_name);
-    try self.webview_c.bind(func_name_sentinel, wrapBindingHandler(handler), self);
+    try self.bind_manager.registerFunc(func_name, handler);
+}
+
+pub fn registerDecls(self: *Self, comptime Owner: type, owner: *Owner) !void {
+    try self.bind_manager.registerDecls(Owner, owner);
 }
 
 pub fn run(self: Self) !void {
@@ -43,41 +49,4 @@ pub fn deinit(self: Self) void {
     for (self.bind_ctxs.items) |*ctx| self.allocator.destroy(ctx);
     self.bind_ctxs.deinit();
     self.webview_c.destroy() catch return;
-}
-
-// Private
-fn callFromJson(allocator: std.mem.Allocator, comptime func: anytype, args: []const u8) !void {
-    const FuncType = @TypeOf(func);
-
-    const ArgsTuple = std.meta.ArgsTuple(FuncType);
-    const parsed = try std.json.parseFromSlice(
-        ArgsTuple,
-        allocator,
-        args,
-        .{},
-    );
-    defer parsed.deinit();
-
-    @call(.auto, func, parsed.value);
-}
-
-fn wrapBindingHandler(comptime handler: anytype) web_view_c_mod.WebView.BindCallback {
-    comptime {
-        if (@typeInfo(@TypeOf(handler)) != .@"fn") {
-            @compileError("Handler must be a function");
-        }
-    }
-
-    return struct {
-        fn callback(id: [*:0]const u8, args: [*:0]const u8, ctx: ?*anyopaque) callconv(.c) void {
-            _ = id;
-
-            const ctx_ptr = ctx orelse return;
-            const self: *Self = @ptrCast(@alignCast(ctx_ptr));
-
-            callFromJson(self.allocator, handler, std.mem.span(args)) catch |err| {
-                log.err("callback call/parse error: {s}", .{@errorName(err)});
-            };
-        }
-    }.callback;
 }

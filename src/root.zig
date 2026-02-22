@@ -19,10 +19,7 @@ pub const Config = struct {
     window: WindowConfig,
 };
 
-pub fn init(
-    allocator: std.mem.Allocator,
-    config: Config,
-) !Self {
+pub fn init(allocator: std.mem.Allocator, config: Config) !Self {
     const server_config: ServerConfig = switch (build_options.source_type) {
         // Default vite dev server
         .dev_server => .{ .host = "localhost", .port = 5173 },
@@ -79,16 +76,8 @@ pub fn start(self: *Self) !void {
     }
 }
 
-pub fn registerDecls(self: *Self, comptime owner: anytype) !void {
-    const type_info = @typeInfo(owner).@"struct";
-
-    inline for (type_info.decls) |decl| {
-        const decl_value = @field(owner, decl.name);
-        if (@typeInfo(@TypeOf(decl_value)) == .@"fn") {
-            log.debug("{s} - Registering func: {s}\n", .{ @typeName(owner), decl.name });
-            try self.webview.registerFunc(decl.name, decl_value);
-        }
-    }
+pub fn registerDecls(self: *Self, comptime Owner: type, owner: *Owner) !void {
+    try self.webview.registerDecls(Owner, owner);
 }
 
 pub fn deinit(self: *Self) void {

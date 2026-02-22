@@ -6,9 +6,104 @@ It allows you to build desktop apps with web tech on the frontend and Zig on the
 
 Right now, the result binary in -Doptimize=ReleaseSmall is 717kb in size with example frontend 🤪
 
-![Zystal Example](resources/zystal_example.png)
-
-## Status
-
 **In development**  
 This project is actively evolving, and things may change substantially.
+
+# Example
+![Zystal Example](resources/zystal_example.png)
+
+```zig
+const std = @import("std");
+const Io = std.Io;
+const Zystal = @import("zystal");
+
+pub const Commands = struct {
+    const Self = @This();
+
+    last_count: u32,
+
+    // This function is called from frontend using TS/JS directly
+    // Example: handleButtonClick("Count:", 4);
+    pub fn handleButtonClick(self: *Self, param1: []const u8, param2: u32) void {
+        std.debug.print(
+            "Button click -> {s} {d}, last_count: {d}\n",
+            .{ param1, param2, self.last_count },
+        );
+        self.last_count = param2;
+    }
+};
+
+pub fn main(init: std.process.Init) !void {
+    const allocator = init.gpa;
+
+    // Main object initialization
+    var zystal = try Zystal.init(allocator, .{
+        // Sets window parameters
+        .window = .{
+            .window_size = .{ .height = 720, .width = 1280 },
+            .window_title = "Zystal",
+            // Enable dev tools or not
+            .dev_tools = true,
+        },
+    });
+
+    // Zystal is designed to make registrations automatically
+    // So you creating an object, it even could have its own state
+    // or dependencies like an allocator, Io, etc
+    var commands = Commands{ .last_count = 0 };
+    // `registerDecl` accepts the comptime type and the pointer to allocated object
+    // it takes all functions of an object and registers them with their name,
+    // so you can call them from frontend
+    // like an ordinary JavaScript function passing parameters to it
+    try zystal.registerDecls(Commands, &commands);
+
+    // Blocking function that runs webview and the asset server in parallel (if release mode)
+    try zystal.start();
+}
+```
+
+```tsx
+import { useState } from "react";
+
+// Code gen is in development,
+// now you should declare functions manually if using TypeScript
+declare function handleButtonClick(param1: string, param2: number): void;
+
+function App() {
+    const [count, setCount] = useState(0);
+
+    const handleButton: () => void = () => {
+        setCount(count + 1);
+        // Call Zig function
+        handleButtonClick("Count", count);
+    };
+
+    return (
+        <main className="min-h-screen px-6 py-10 grid place-items-center select-none">
+            <section className="w-full max-w-3xl text-center">
+                <h1 className="m-0 text-7xl font-bold">Zystal</h1>
+                <p className="mx-auto mt-4 max-w-[56ch] text-lg font-medium">
+                    Cross-platform self-contained web applications in Zig
+                </p>
+
+                <button
+                    type="button"
+                    className="..."
+                    onClick={handleButton}
+                >
+                    Count: {count}
+                </button>
+            </section>
+        </main>
+    );
+}
+
+export default App;
+```
+
+## TODO
+
+- [ ] Enable communication from Zig to the frontend
+- [ ] Support running the app with a single command across npm, bun, and other package managers
+- [ ] Build a bundler that packages the executable into installable apps (icons, metadata, etc.)
+- [ ] ...

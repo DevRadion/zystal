@@ -6,6 +6,8 @@ It allows you to build desktop apps with web tech on the frontend and Zig on the
 
 Right now, the result binary in -Doptimize=ReleaseSmall is 717kb in size with example frontend 🤪
 
+![Zystal Example](resources/zystal_example.png)
+
 ## Status
 
 **In development**  

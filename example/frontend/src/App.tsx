@@ -1,13 +1,13 @@
 import { useState } from "react";
 
-declare function handleButtonClick(param1: string, param2: number): void;
+declare function handleButtonClick(param1: string): Promise<number>;
 
 function App() {
     const [count, setCount] = useState(0);
 
-    const handleButton: () => void = () => {
-        setCount(count + 1);
-        handleButtonClick("Count", count);
+    const handleButton: () => void = async () => {
+        const result = await handleButtonClick("Count");
+        setCount(result);
     };
 
     return (

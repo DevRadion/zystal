@@ -5,16 +5,18 @@ const Zystal = @import("zystal");
 pub const Commands = struct {
     const Self = @This();
 
-    last_count: u32,
+    last_count: u32 = 0,
 
     // This function is called from frontend using TS/JS directly
-    // Example: handleButtonClick("Count:", 4);
-    pub fn handleButtonClick(self: *Self, param1: []const u8, param2: u32) void {
+    // Example: handleButtonClick("Count");
+    pub fn handleButtonClick(self: *Self, param1: []const u8) u32 {
         std.debug.print(
-            "Button click -> {s} {d}, last_count: {d}\n",
-            .{ param1, param2, self.last_count },
+            "Button click -> {s} {d}\n",
+            .{ param1, self.last_count },
         );
-        self.last_count = param2;
+        self.last_count += 1;
+
+        return self.last_count;
     }
 };
 

@@ -20,16 +20,18 @@ const Zystal = @import("zystal");
 pub const Commands = struct {
     const Self = @This();
 
-    last_count: u32,
+    last_count: u32 = 0,
 
     // This function is called from frontend using TS/JS directly
-    // Example: handleButtonClick("Count:", 4);
-    pub fn handleButtonClick(self: *Self, param1: []const u8, param2: u32) void {
+    // Example: handleButtonClick("Count");
+    pub fn handleButtonClick(self: *Self, param1: []const u8) u32 {
         std.debug.print(
-            "Button click -> {s} {d}, last_count: {d}\n",
-            .{ param1, param2, self.last_count },
+            "Button click -> {s} {d}\n",
+            .{ param1, self.last_count },
         );
-        self.last_count = param2;
+        self.last_count += 1;
+
+        return self.last_count;
     }
 };
 
@@ -46,6 +48,7 @@ pub fn main(init: std.process.Init) !void {
             .dev_tools = true,
         },
     });
+    defer zystal.deinit();
 
     // Zystal is designed to make registrations automatically
     // So you creating an object, it even could have its own state
@@ -65,17 +68,14 @@ pub fn main(init: std.process.Init) !void {
 ```tsx
 import { useState } from "react";
 
-// Code gen is in development,
-// now you should declare functions manually if using TypeScript
-declare function handleButtonClick(param1: string, param2: number): void;
+declare function handleButtonClick(param1: string): Promise<number>;
 
 function App() {
     const [count, setCount] = useState(0);
 
-    const handleButton: () => void = () => {
-        setCount(count + 1);
-        // Call Zig function
-        handleButtonClick("Count", count);
+    const handleButton: () => void = async () => {
+        const result = await handleButtonClick("Count");
+        setCount(result);
     };
 
     return (

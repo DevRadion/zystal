@@ -1,19 +1,19 @@
 const std = @import("std");
 const WebView = @import("webview").WebView;
 
-const html = 
-        \\ <button id="increment">Click me</button>
-        \\ <div>You clicked <span id="count">0</span> time(s).</div>
-        \\ <script>
-        \\ const [incrementElement, countElement] = document.querySelectorAll("#increment, #count");
-        \\ document.addEventListener("DOMContentLoaded", () => {
-        \\   incrementElement.addEventListener("click", () => {
-        \\     window.increment(countElement.innerText).then(result => {
-        \\       countElement.textContent = result;
-        \\     });
-        \\   });
-        \\ });
-        \\ </script>
+const html =
+    \\ <button id="increment">Click me</button>
+    \\ <div>You clicked <span id="count">0</span> time(s).</div>
+    \\ <script>
+    \\ const [incrementElement, countElement] = document.querySelectorAll("#increment, #count");
+    \\ document.addEventListener("DOMContentLoaded", () => {
+    \\   incrementElement.addEventListener("click", () => {
+    \\     window.increment(countElement.innerText).then(result => {
+    \\       countElement.textContent = result;
+    \\     });
+    \\   });
+    \\ });
+    \\ </script>
 ;
 
 pub fn increment(id: [*:0]const u8, req: [*:0]const u8, ctx: ?*anyopaque) callconv(.c) void {
@@ -33,7 +33,7 @@ pub fn increment(id: [*:0]const u8, req: [*:0]const u8, ctx: ?*anyopaque) callco
         std.debug.print("cant not return from increment function.\n", .{});
         unreachable;
     };
-    std.debug.print("req: {s}, result: {s}\n", .{req, result});
+    std.debug.print("req: {s}, result: {s}\n", .{ req, result });
 }
 
 pub fn main() !void {
@@ -42,7 +42,7 @@ pub fn main() !void {
     try w.setSize(480, 320, .none);
 
     try w.bind("increment", &increment, &w);
-    
+
     try w.setHtml(html);
     try w.run();
     try w.destroy();

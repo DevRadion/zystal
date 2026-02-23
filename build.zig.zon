@@ -33,7 +33,8 @@
     // internet connectivity.
     .dependencies = .{
         .webview = .{
-            .path = "vendor/webview-zig",
+            .url = "https://github.com/devradion/webview-zig/archive/refs/heads/main.tar.gz",
+            .hash = "webview-0.1.0-ImQK_6zrIACle9f6KGyoehEvDWy9GVz7URacw8_wIdVF",
         },
     },
     .paths = .{

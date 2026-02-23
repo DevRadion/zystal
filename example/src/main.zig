@@ -31,6 +31,7 @@ pub fn main(init: std.process.Init) !void {
             .dev_tools = true,
         },
     });
+    defer zystal.deinit();
 
     // Zystal is designed to make registrations automatically
     // So you creating an object, it even could have its own state

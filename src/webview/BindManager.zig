@@ -12,13 +12,19 @@ pub fn BindContext(comptime Owner: type) type {
 }
 
 allocator: std.mem.Allocator,
+arena: std.heap.ArenaAllocator,
 webview_c: webview_c_mod.WebView,
 
 pub fn init(allocator: std.mem.Allocator, webview_c: webview_c_mod.WebView) Self {
     return .{
         .allocator = allocator,
+        .arena = std.heap.ArenaAllocator.init(allocator),
         .webview_c = webview_c,
     };
+}
+
+pub fn deinit(self: *Self) void {
+    self.arena.deinit();
 }
 
 pub fn registerDecls(self: *Self, comptime Owner: type, owner: *Owner) !void {
@@ -30,7 +36,7 @@ pub fn registerDecls(self: *Self, comptime Owner: type, owner: *Owner) !void {
             log.debug("{s} - Registering func: {s}\n", .{ @typeName(Owner), decl.name });
             const trampoline = makeTrampoline(Owner, decl.name);
 
-            const ctx = try self.allocator.create(BindContext(Owner));
+            const ctx = try self.arena.allocator().create(BindContext(Owner));
             ctx.* = .{ .owner = owner, .binding_manager = self };
 
             try self.webview_c.bind(decl.name, trampoline, ctx);

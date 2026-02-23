@@ -28,9 +28,8 @@ pub fn build(allocator: std.mem.Allocator, config: WindowConfig) !Self {
     };
 }
 
-pub fn load(self: Self, host: []const u8) !void {
-    const host_term: [:0]const u8 = @ptrCast(host);
-    try self.webview_c.navigate(host_term);
+pub fn load(self: Self, host: [:0]const u8) !void {
+    try self.webview_c.navigate(host);
 }
 
 pub fn registerFunc(self: *Self, func_name: []const u8, comptime handler: anytype) !void {
@@ -45,8 +44,7 @@ pub fn run(self: Self) !void {
     try self.webview_c.run();
 }
 
-pub fn deinit(self: Self) void {
-    for (self.bind_ctxs.items) |*ctx| self.allocator.destroy(ctx);
-    self.bind_ctxs.deinit();
+pub fn deinit(self: *Self) void {
+    self.bind_manager.deinit();
     self.webview_c.destroy() catch return;
 }

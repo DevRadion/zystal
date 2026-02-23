@@ -68,7 +68,7 @@ pub fn start(self: *Self) !void {
 
 pub fn deinit(self: *Self) void {
     self.is_running.store(false, .release);
-    std.debug.print("stopping server thread\n", .{});
+    self.asset_store.deinit();
 }
 
 pub fn stop(self: *Self) void {

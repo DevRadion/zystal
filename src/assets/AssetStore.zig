@@ -25,6 +25,10 @@ pub fn storeAsset(self: *Self, path: []const u8, data: []const u8) !void {
     return try self.assets.put(path, asset);
 }
 
+pub fn deinit(self: *Self) void {
+    self.assets.deinit();
+}
+
 fn parseMimeType(path: []const u8) !Asset.MimeType {
     if (std.mem.endsWith(u8, path, ".html")) return .html;
     if (std.mem.endsWith(u8, path, ".css")) return .css;

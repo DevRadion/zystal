@@ -10,7 +10,7 @@ const AssetStore = @import("assets/AssetStore.zig");
 const WindowConfig = @import("models/WindowConfig.zig");
 const ServerConfig = @import("models/ServerConfig.zig");
 
-allocator: std.mem.Allocator,
+arena: std.heap.ArenaAllocator,
 webview: WebView,
 server_config: ServerConfig,
 asset_server: ?AssetServer,
@@ -41,7 +41,7 @@ pub fn init(allocator: std.mem.Allocator, config: Config) !Self {
     }
 
     return .{
-        .allocator = allocator,
+        .arena = std.heap.ArenaAllocator.init(allocator),
         .webview = try WebView.build(allocator, config.window),
         .server_config = server_config,
         .asset_server = asset_server,
@@ -56,17 +56,16 @@ pub fn start(self: *Self) !void {
         }
     }
 
-    const frontend_host = try std.fmt.allocPrintSentinel(
-        self.allocator,
+    var frontend_host_buf: [256]u8 = undefined;
+    const frontend_host = try std.fmt.bufPrintZ(
+        &frontend_host_buf,
         "http://{s}:{d}",
         .{ self.server_config.host, self.server_config.port },
-        0,
     );
-    const front_host_term: [:0]const u8 = @ptrCast(frontend_host);
 
     log.debug("Loading web page: {s}", .{frontend_host});
 
-    try self.webview.load(front_host_term);
+    try self.webview.load(frontend_host);
     try self.webview.run();
 
     if (build_options.source_type == .built_assets) {
@@ -81,6 +80,7 @@ pub fn registerDecls(self: *Self, comptime Owner: type, owner: *Owner) !void {
 }
 
 pub fn deinit(self: *Self) void {
-    self.asset_server.deinit();
+    if (self.asset_server) |*server| server.deinit();
     self.webview.deinit();
+    self.arena.deinit();
 }

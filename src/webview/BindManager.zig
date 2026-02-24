@@ -1,8 +1,12 @@
 const std = @import("std");
-const log = @import("../log.zig");
+
 const webview_c_mod = @import("webview");
 
+const Logger = @import("../logger.zig").Logger;
+
 const Self = @This();
+
+const log = Logger("BindManager");
 
 pub fn BindContext(comptime Owner: type) type {
     return struct {

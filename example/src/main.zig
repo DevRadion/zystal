@@ -7,11 +7,15 @@ const TestEvent = struct {
     greeting: []const u8,
 };
 
+// Channel DataType and name baked into type,
+// so you can declare them and use consistently and type-safe, duplicate registrations are checked.
+const TestChannel = Channel(TestEvent, "test-channel");
+
 pub const Commands = struct {
     const Self = @This();
 
     last_count: u32 = 0,
-    test_channel: Channel(TestEvent),
+    test_channel: TestChannel,
 
     // This function is called from frontend using TS/JS directly
     // Example: handleButtonClick("Count");
@@ -21,7 +25,9 @@ pub const Commands = struct {
             .{ param1, self.last_count },
         );
         self.last_count += 1;
-        self.test_channel.postEvent(TestEvent{ .greeting = "Hello world!" }) catch return self.last_count;
+        self.test_channel.postEvent(
+            TestEvent{ .greeting = "Hello world!" },
+        ) catch return self.last_count;
 
         return self.last_count;
     }
@@ -42,12 +48,13 @@ pub fn main(init: std.process.Init) !void {
     });
     defer zystal.deinit();
 
-    const test_event_channel = try zystal.registerChannel(TestEvent, "test-event");
+    const test_event_channel = try zystal.registerChannel(TestChannel);
 
     // Zystal is designed to make registrations automatically
     // So you creating an object, it even could have its own state
     // or dependencies like an allocator, Io, etc
     var commands = Commands{ .last_count = 0, .test_channel = test_event_channel };
+
     // `registerDecl` accepts the comptime type and the pointer to allocated object
     // it takes all functions of an object and registers them with their name,
     // so you can call them from frontend

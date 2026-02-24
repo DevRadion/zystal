@@ -4,19 +4,25 @@ const build_options = @import("build_options");
 const asset_gen = @import("assets_gen");
 
 const AssetStore = @import("assets/AssetStore.zig");
-const log = @import("log.zig");
 const ServerConfig = @import("models/ServerConfig.zig");
 const WindowConfig = @import("models/WindowConfig.zig");
 const AssetServer = @import("server/AssetServer.zig");
 pub const Channel = @import("webview/channel.zig").Channel;
+const EventSink = @import("webview/EventSink.zig");
 const WebView = @import("webview/WebView.zig");
+const ChannelRegistry = @import("webview/ChannelRegistry.zig");
 
 const Self = @This();
+
+const Logger = @import("Logger.zig").Logger;
+
+const log = Logger("Zystal");
 
 arena: std.heap.ArenaAllocator,
 webview: WebView,
 server_config: ServerConfig,
 asset_server: ?AssetServer,
+channel_registry: ChannelRegistry,
 
 pub const Config = struct {
     window: WindowConfig,
@@ -42,12 +48,21 @@ pub fn init(allocator: std.mem.Allocator, config: Config) !Self {
             asset_store,
         );
     }
+    var webview = try WebView.build(allocator, config.window);
+    errdefer webview.deinit();
 
     return .{
         .arena = std.heap.ArenaAllocator.init(allocator),
-        .webview = try WebView.build(allocator, config.window),
+        .webview = webview,
         .server_config = server_config,
         .asset_server = asset_server,
+        .channel_registry = ChannelRegistry.init(
+            allocator,
+            try EventSink.init(
+                allocator,
+                webview.webview_c,
+            ),
+        ),
     };
 }
 
@@ -82,12 +97,14 @@ pub fn registerDecls(self: *Self, comptime Owner: type, owner: *Owner) !void {
     try self.webview.registerDecls(Owner, owner);
 }
 
-pub fn registerChannel(self: *Self, comptime DataType: type, comptime name: []const u8) !Channel(DataType) {
-    return Channel(DataType).init(name, &self.webview);
+// Accepts Channel type with DataType and name specified
+pub fn registerChannel(self: *Self, ChannelType: type) !ChannelType {
+    return self.channel_registry.registerChannel(ChannelType);
 }
 
 pub fn deinit(self: *Self) void {
     if (self.asset_server) |*server| server.deinit();
+    self.channel_registry.deinit();
     self.webview.deinit();
     self.arena.deinit();
 }

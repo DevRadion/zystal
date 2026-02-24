@@ -7,6 +7,7 @@ const Error = error{
     CouldNotParseMimeType,
 };
 
+// Should be replaced by StaticStringHashMap
 assets: std.StringHashMap(Asset),
 
 pub fn init(allocator: std.mem.Allocator) Self {

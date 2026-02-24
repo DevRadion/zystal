@@ -11,13 +11,11 @@ function App() {
     };
 
     useEffect(() => {
-        const testEventHandler = (event: Event) => {
-            console.log(event);
-        };
-        window.addEventListener("test-event", testEventHandler);
-        return () => {
-            window.removeEventListener("test-event", testEventHandler);
-        };
+        const testEventHandler = (event: Event) => console.log(event);
+
+        window.addEventListener("test-channel", testEventHandler);
+        return () =>
+            window.removeEventListener("test-channel", testEventHandler);
     }, []);
 
     return (

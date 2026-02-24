@@ -1,14 +1,17 @@
-const Self = @This();
-
 const std = @import("std");
-const log = @import("log.zig");
-const asset_gen = @import("assets_gen");
 const build_options = @import("build_options");
-const WebView = @import("webview/WebView.zig");
-const AssetServer = @import("server/AssetServer.zig");
+
+const asset_gen = @import("assets_gen");
+
 const AssetStore = @import("assets/AssetStore.zig");
-const WindowConfig = @import("models/WindowConfig.zig");
+const log = @import("log.zig");
 const ServerConfig = @import("models/ServerConfig.zig");
+const WindowConfig = @import("models/WindowConfig.zig");
+const AssetServer = @import("server/AssetServer.zig");
+pub const Channel = @import("webview/channel.zig").Channel;
+const WebView = @import("webview/WebView.zig");
+
+const Self = @This();
 
 arena: std.heap.ArenaAllocator,
 webview: WebView,
@@ -77,6 +80,10 @@ pub fn start(self: *Self) !void {
 
 pub fn registerDecls(self: *Self, comptime Owner: type, owner: *Owner) !void {
     try self.webview.registerDecls(Owner, owner);
+}
+
+pub fn registerChannel(self: *Self, comptime DataType: type, comptime name: []const u8) !Channel(DataType) {
+    return Channel(DataType).init(name, &self.webview);
 }
 
 pub fn deinit(self: *Self) void {

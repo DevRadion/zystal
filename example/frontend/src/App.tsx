@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 declare function handleButtonClick(param1: string): Promise<number>;
 
@@ -9,6 +9,16 @@ function App() {
         const result = await handleButtonClick("Count");
         setCount(result);
     };
+
+    useEffect(() => {
+        const testEventHandler = (event: Event) => {
+            console.log(event);
+        };
+        window.addEventListener("test-event", testEventHandler);
+        return () => {
+            window.removeEventListener("test-event", testEventHandler);
+        };
+    }, []);
 
     return (
         <main className="min-h-screen px-6 py-10 grid place-items-center select-none">

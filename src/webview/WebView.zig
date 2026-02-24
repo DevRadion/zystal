@@ -15,6 +15,16 @@ bind_manager: BindManager,
 pub fn build(allocator: std.mem.Allocator, config: WindowConfig) !Self {
     const w = webview_c_mod.WebView.create(config.dev_tools, null);
 
+    // Function to simplify event emit later
+    try w.init(
+        \\window.__nativeEmit = (name, detailJson) => {
+        \\  let detail;
+        \\  try { detail = detailJson ? JSON.parse(detailJson) : undefined; }
+        \\  catch { detail = detailJson; }
+        \\  window.dispatchEvent(new CustomEvent(name, { detail }));
+        \\};
+    );
+
     try w.setSize(config.window_size.width, config.window_size.height, .none);
     // Maybe it's better to use dupeZ here to prevent it from crashing from unknown memory layout
     // or just make it null term in Config and pass this problem from here to external side :)
@@ -26,6 +36,26 @@ pub fn build(allocator: std.mem.Allocator, config: WindowConfig) !Self {
         .webview_c = w,
         .bind_manager = BindManager.init(allocator, w),
     };
+}
+
+pub fn emitEvent(self: *Self, name: []const u8, data: anytype) !void {
+    var buffer = std.Io.Writer.Allocating.init(self.allocator);
+    defer buffer.deinit();
+
+    try std.json.Stringify.value(data, .{}, &buffer.writer);
+    const json_string = try buffer.toOwnedSlice();
+    defer self.allocator.free(json_string);
+
+    const js_string = try std.fmt.allocPrintSentinel(
+        self.allocator,
+        "window.__nativeEmit(\"{s}\", {s});",
+        .{ name, json_string },
+        0,
+    );
+    defer self.allocator.free(js_string);
+    std.debug.print("Sending event -> {s}\n", .{json_string});
+
+    try self.webview_c.eval(js_string);
 }
 
 pub fn load(self: Self, host: [:0]const u8) !void {

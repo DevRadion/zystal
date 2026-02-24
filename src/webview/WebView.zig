@@ -62,10 +62,6 @@ pub fn load(self: Self, host: [:0]const u8) !void {
     try self.webview_c.navigate(host);
 }
 
-pub fn registerFunc(self: *Self, func_name: []const u8, comptime handler: anytype) !void {
-    try self.bind_manager.registerFunc(func_name, handler);
-}
-
 pub fn registerDecls(self: *Self, comptime Owner: type, owner: *Owner) !void {
     try self.bind_manager.registerDecls(Owner, owner);
 }

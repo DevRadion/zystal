@@ -48,11 +48,6 @@ pub fn registerDecls(self: *Self, comptime Owner: type, owner: *Owner) !void {
     }
 }
 
-pub fn registerFunc(self: *Self, func_name: []const u8, comptime handler: anytype) !void {
-    const func_name_sentinel: [:0]const u8 = @ptrCast(func_name);
-    try self.webview_c.bind(func_name_sentinel, makeTrampoline(handler), self);
-}
-
 fn makeTrampoline(comptime Owner: type, comptime func_name: []const u8) webview_c_mod.WebView.BindCallback {
     const Context = BindContext(Owner);
 

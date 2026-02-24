@@ -32,7 +32,7 @@ const AssetHandler = struct {
 
     fn respondUnknown(req: *std.http.Server.Request) !void {
         try req.respond("404 Page not found", .{
-            .status = .ok,
+            .status = .not_found,
             .extra_headers = &[_]std.http.Header{.{
                 .name = "Content-Type",
                 .value = "text/html",

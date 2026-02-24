@@ -16,11 +16,21 @@ This project is actively evolving, and things may change substantially.
 const std = @import("std");
 const Io = std.Io;
 const Zystal = @import("zystal");
+const Channel = Zystal.Channel;
+
+const TestEvent = struct {
+    greeting: []const u8,
+};
+
+// Channel DataType and name baked into type,
+// so you can declare them and use consistently and type-safe, duplicate registrations are checked.
+const TestChannel = Channel(TestEvent, "test-channel");
 
 pub const Commands = struct {
     const Self = @This();
 
     last_count: u32 = 0,
+    test_channel: TestChannel,
 
     // This function is called from frontend using TS/JS directly
     // Example: handleButtonClick("Count");
@@ -30,6 +40,9 @@ pub const Commands = struct {
             .{ param1, self.last_count },
         );
         self.last_count += 1;
+        self.test_channel.postEvent(
+            TestEvent{ .greeting = "Hello world!" },
+        ) catch return self.last_count;
 
         return self.last_count;
     }
@@ -50,10 +63,13 @@ pub fn main(init: std.process.Init) !void {
     });
     defer zystal.deinit();
 
+    const test_event_channel = try zystal.registerChannel(TestChannel);
+
     // Zystal is designed to make registrations automatically
     // So you creating an object, it even could have its own state
     // or dependencies like an allocator, Io, etc
-    var commands = Commands{ .last_count = 0 };
+    var commands = Commands{ .last_count = 0, .test_channel = test_event_channel };
+
     // `registerDecl` accepts the comptime type and the pointer to allocated object
     // it takes all functions of an object and registers them with their name,
     // so you can call them from frontend
@@ -66,7 +82,7 @@ pub fn main(init: std.process.Init) !void {
 ```
 
 ```tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 declare function handleButtonClick(param1: string): Promise<number>;
 
@@ -77,6 +93,14 @@ function App() {
         const result = await handleButtonClick("Count");
         setCount(result);
     };
+
+    useEffect(() => {
+        const testEventHandler = (event: Event) => console.log(event);
+
+        window.addEventListener("test-channel", testEventHandler);
+        return () =>
+            window.removeEventListener("test-channel", testEventHandler);
+    }, []);
 
     return (
         <main className="min-h-screen px-6 py-10 grid place-items-center select-none">
@@ -103,7 +127,7 @@ export default App;
 
 ## TODO
 
-- [ ] Enable communication from Zig to the frontend
+- [X] Enable communication from Zig to the frontend
 - [ ] Support running the app with a single command across npm, bun, and other package managers
 - [ ] Build a bundler that packages the executable into installable apps (icons, metadata, etc.)
 - [ ] ...

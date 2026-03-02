@@ -7,7 +7,8 @@ It allows you to build desktop apps with web tech on the frontend and Zig on the
 Right now, the result binary in -Doptimize=ReleaseSmall is 717kb in size with example frontend 🤪
 
 **In development**  
-This project is actively evolving, and things may change substantially.
+This project is actively evolving, and things may change substantially.\
+Also, I making a CLI for it - [Zystal-CLI](https://github.com/DevRadion/zystal-cli) to make DX similar to work like in single codebase.
 
 # Example
 ![Zystal Example](resources/zystal_example.png)

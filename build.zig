@@ -69,6 +69,7 @@ pub fn build(b: *std.Build) void {
         .root_module = zystal_mod,
     });
     static_lib.root_module.linkLibrary(webview.artifact("webviewStatic"));
+    link(static_lib);
     b.installArtifact(static_lib);
 
     // ----------------------------------------------------------------------------------------------
@@ -115,4 +116,26 @@ fn makeEmptyAssetsModule(b: *std.Build) *std.Build.Module {
     return b.createModule(.{
         .root_source_file = generated,
     });
+}
+
+// System deps
+fn link(lib: *std.Build.Step.Compile) void {
+    switch (lib.rootModuleTarget().os.tag) {
+        .macos => linkMacos(lib),
+        else => @panic("Unsupported platform"),
+    }
+}
+
+fn linkMacos(lib: *std.Build.Step.Compile) void {
+    lib.root_module.addCSourceFiles(.{
+        .files = &.{
+            "src/platform/macos/window.m",
+            "src/platform/macos/traffic_lights.m",
+        },
+        .flags = &.{"-fobjc-arc"},
+    });
+
+    lib.root_module.linkFramework("Cocoa", .{});
+    lib.root_module.linkFramework("QuartzCore", .{});
+    lib.root_module.link_libc = true;
 }

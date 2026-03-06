@@ -41,6 +41,10 @@ pub fn run(self: Self) !void {
     try self.webview_c.run();
 }
 
+pub fn getNativeHandle(self: *const Self) ?*anyopaque {
+    return self.webview_c.getNativeHandle(.ui_window) orelse null;
+}
+
 pub fn deinit(self: *Self) void {
     self.bind_manager.deinit();
     self.webview_c.destroy() catch return;

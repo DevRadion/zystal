@@ -33,6 +33,17 @@ pub const Commands = struct {
     }
 };
 
+fn customizeWindow(zystal: *Zystal) void {
+    const window = zystal.window() orelse return;
+    if (window.platform(.macos)) |macos| {
+        macos.setStyleMask(&.{.full_size_content_view});
+        macos.setTitleVisibility(false);
+        macos.setTitleBarAppearsTransparent(true);
+        macos.setTrafficLightsPosition(14, 14, null);
+        macos.setMovableByWindowBackground(true);
+    }
+}
+
 pub fn main(init: std.process.Init) !void {
     const allocator = init.gpa;
 
@@ -60,6 +71,8 @@ pub fn main(init: std.process.Init) !void {
     // so you can call them from frontend
     // like an ordinary JavaScript function passing parameters to it
     try zystal.registerDecls(Commands, &commands);
+
+    customizeWindow(&zystal);
 
     // Blocking function that runs webview and the asset server in parallel (if release mode)
     try zystal.start();

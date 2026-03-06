@@ -11,6 +11,7 @@ pub const Channel = @import("webview/channel.zig").Channel;
 const EventSink = @import("webview/EventSink.zig");
 const WebView = @import("webview/WebView.zig");
 const ChannelRegistry = @import("webview/ChannelRegistry.zig");
+const Window = @import("platform/Window.zig");
 
 const Self = @This();
 
@@ -100,6 +101,11 @@ pub fn registerDecls(self: *Self, comptime Owner: type, owner: *Owner) !void {
 // Accepts Channel type with DataType and name specified
 pub fn registerChannel(self: *Self, ChannelType: type) !ChannelType {
     return self.channel_registry.registerChannel(ChannelType);
+}
+
+pub fn window(self: *Self) ?Window {
+    const handle = self.webview.getNativeHandle() orelse return null;
+    return Window.init(handle);
 }
 
 pub fn deinit(self: *Self) void {

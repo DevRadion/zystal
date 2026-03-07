@@ -1,3 +1,4 @@
 const Self = @This();
 
-dev_tools: bool,
+x: u16,
+y: u16,

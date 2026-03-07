@@ -3,6 +3,21 @@
 #import <QuartzCore/QuartzCore.h>
 #import <WebKit/WebKit.h>
 
+struct WPoint {
+    uint16 x;
+    uint16 y;
+};
+
+struct WSize {
+    uint16 width;
+    uint16 height;
+};
+
+struct WRect {
+    struct WSize size;
+    struct WPoint origin;
+};
+
 static NSWindowStyleMask styleMaskFromTag(uint8_t tag) {
     switch (tag) {
     case 0:
@@ -24,6 +39,26 @@ static NSWindowStyleMask styleMaskFromTag(uint8_t tag) {
     default:
         return 0;
     }
+}
+
+void setTitle(void *window_ptr, const char *title) {
+    NSString *title_string = [[NSString alloc] initWithUTF8String:title];
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window setTitle:title_string];
+}
+
+void setRect(void *window_ptr, struct WRect *rect, bool animated, bool display) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window setFrame:(NSMakeRect(rect->origin.x, rect->origin.y, rect->size.width, rect->size.height))
+             display:(display)animate:(animated)];
+}
+
+void getRect(void *window_ptr, struct WRect *out) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    out->size.width = window.frame.size.width;
+    out->size.height = window.frame.size.height;
+    out->origin.x = window.frame.origin.x;
+    out->origin.y = window.frame.origin.y;
 }
 
 void insertStyleMask(void *window_ptr, uint8_t tag) {
@@ -56,4 +91,94 @@ void setWindowBackgroundColor(void *window_ptr, double r, double g, double b, do
     NSColor *color = [NSColor colorWithSRGBRed:r green:g blue:b alpha:a];
     [window setBackgroundColor:color];
     [window setOpaque:(a >= 1.0)];
+}
+
+// --- Window Constraints ---
+
+void setMinSize(void *window_ptr, struct WSize *size) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window setMinSize:NSMakeSize(size->width, size->height)];
+}
+
+void setMaxSize(void *window_ptr, struct WSize *size) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window setMaxSize:NSMakeSize(size->width, size->height)];
+}
+
+// --- Window Visibility ---
+
+void showWindow(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window makeKeyAndOrderFront:nil];
+}
+
+void hideWindow(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window orderOut:nil];
+}
+
+void focusWindow(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window makeKeyAndOrderFront:nil];
+    if (@available(macOS 14.0, *)) {
+        [NSApp activate];
+    } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        [NSApp activateIgnoringOtherApps:YES];
+#pragma clang diagnostic pop
+    }
+}
+
+bool isWindowVisible(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    return [window isVisible];
+}
+
+// --- Window State ---
+
+void minimizeWindow(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window miniaturize:nil];
+}
+
+void maximizeWindow(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window zoom:nil];
+}
+
+void closeWindow(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window performClose:nil];
+}
+
+void toggleFullScreen(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    if (!([window styleMask] & NSWindowStyleMaskFullScreen)) {
+        [window toggleFullScreen:nil];
+    }
+}
+
+void restoreWindow(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    if ([window isMiniaturized]) [window deminiaturize:nil];
+    if ([window styleMask] & NSWindowStyleMaskFullScreen) [window toggleFullScreen:nil];
+    if ([window isZoomed]) [window zoom:nil];
+}
+
+// --- Window Level/Ordering ---
+
+void setAlwaysOnTop(void *window_ptr, bool on_top) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window setLevel:(on_top ? NSFloatingWindowLevel : NSNormalWindowLevel)];
+}
+
+void orderWindowFront(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window orderFront:nil];
+}
+
+void orderWindowBack(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window orderBack:nil];
 }

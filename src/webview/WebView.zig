@@ -16,12 +16,6 @@ bind_manager: BindManager,
 pub fn build(allocator: std.mem.Allocator, config: WindowConfig) !Self {
     const w = webview_c_mod.WebView.create(config.dev_tools, null);
 
-    try w.setSize(config.window_size.width, config.window_size.height, .none);
-    // Maybe it's better to use dupeZ here to prevent it from crashing from unknown memory layout
-    // or just make it null term in Config and pass this problem from here to external side :)
-    const null_term_title: [:0]const u8 = @ptrCast(config.window_title);
-    try w.setTitle(null_term_title);
-
     return .{
         .allocator = allocator,
         .webview_c = w,

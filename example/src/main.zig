@@ -36,14 +36,23 @@ pub const Commands = struct {
 fn customizeWindow(zystal: *Zystal) void {
     const window = zystal.window() orelse return;
     if (window.platform(.macos)) |macos| {
-        macos.setStyleMask(&.{ .full_size_content_view, .borderless, .unified_title_and_toolbar });
+        macos.setStyleMask(&.{ .full_size_content_view, .borderless, .closable, .miniaturizable, .resizable });
         macos.setTitleVisibility(false);
         macos.setTitleBarAppearsTransparent(true);
         macos.setTrafficLightsPosition(14, 14, null);
-        macos.setMovableByWindowBackground(true);
-        macos.setWebViewTransparent();
-        macos.setBackgroundColor(0.0, 0.0, 0.0, 0.0);
+        std.debug.print("RECT: {any}", .{macos.getRect()});
     }
+
+    window.setMovableByWindowBackground(true);
+    window.setWebViewTransparent();
+    window.setBackgroundColor(0.0, 0.0, 0.0, 0.0);
+    window.setTitle("Zystal");
+    window.setRect(.{
+        .size = .{ .width = 800, .height = 500 },
+        .origin = .{ .x = 0, .y = 0 },
+    }, true, true);
+    window.setMinSize(.{ .width = 400, .height = 300 });
+    window.setMaxSize(.{ .width = 900, .height = 800 });
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -53,8 +62,6 @@ pub fn main(init: std.process.Init) !void {
     var zystal = try Zystal.init(allocator, .{
         // Sets window parameters
         .window = .{
-            .window_size = .{ .height = 720, .width = 1280 },
-            .window_title = "Zystal",
             // Enable dev tools or not
             .dev_tools = true,
         },

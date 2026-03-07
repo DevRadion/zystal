@@ -36,11 +36,13 @@ pub const Commands = struct {
 fn customizeWindow(zystal: *Zystal) void {
     const window = zystal.window() orelse return;
     if (window.platform(.macos)) |macos| {
-        macos.setStyleMask(&.{.full_size_content_view});
+        macos.setStyleMask(&.{ .full_size_content_view, .borderless, .unified_title_and_toolbar });
         macos.setTitleVisibility(false);
         macos.setTitleBarAppearsTransparent(true);
         macos.setTrafficLightsPosition(14, 14, null);
         macos.setMovableByWindowBackground(true);
+        macos.setWebViewTransparent();
+        macos.setBackgroundColor(0.0, 0.0, 0.0, 0.0);
     }
 }
 

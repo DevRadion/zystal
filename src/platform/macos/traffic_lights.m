@@ -7,8 +7,8 @@ static const char kTrafficLightYKey;
 static const char kTrafficLightSpacingKey;
 
 static NSView *findTitlebarContainerView(NSWindow *window) {
-    NSView *frameView = window.contentView.superview;
-    for (NSView *subview in frameView.subviews) {
+    NSView *frameView = [[window contentView] superview];
+    for (NSView *subview in [frameView subviews]) {
         if ([NSStringFromClass([subview class]) containsString:@"TitlebarContainerView"])
             return subview;
     }
@@ -23,9 +23,9 @@ static void repositionTrafficLights(NSWindow *window, NSView *containerView) {
     if (!xVal || !yVal || !spacingVal)
         return;
 
-    CGFloat x = xVal.doubleValue;
-    CGFloat yFromTop = yVal.doubleValue;
-    CGFloat spacing = spacingVal.doubleValue;
+    CGFloat x = [xVal doubleValue];
+    CGFloat yFromTop = [yVal doubleValue];
+    CGFloat spacing = [spacingVal doubleValue];
 
     NSButton *closeBtn = [window standardWindowButton:NSWindowCloseButton];
     NSButton *miniBtn = [window standardWindowButton:NSWindowMiniaturizeButton];
@@ -33,12 +33,13 @@ static void repositionTrafficLights(NSWindow *window, NSView *containerView) {
     if (!closeBtn)
         return;
 
-    NSView *superview = closeBtn.superview;
+    NSView *superview = [closeBtn superview];
     if (!superview)
         return;
 
-    CGFloat buttonH = closeBtn.frame.size.height;
-    CGFloat containerH = containerView ? containerView.frame.size.height : superview.frame.size.height;
+    CGFloat buttonH = [closeBtn frame].size.height;
+    CGFloat containerH =
+        containerView ? [containerView frame].size.height : [superview frame].size.height;
     CGFloat yInContainer = containerH - buttonH - yFromTop;
 
     CGFloat yFinal;
@@ -49,10 +50,15 @@ static void repositionTrafficLights(NSWindow *window, NSView *containerView) {
         yFinal = yInContainer;
     }
 
-    closeBtn.frame = NSMakeRect(x, yFinal, closeBtn.frame.size.width, buttonH);
-    miniBtn.frame = NSMakeRect(x + spacing, yFinal, miniBtn.frame.size.width, miniBtn.frame.size.height);
-    zoomBtn.frame =
-        NSMakeRect(x + spacing * 2, yFinal, zoomBtn.frame.size.width, zoomBtn.frame.size.height);
+    [closeBtn setFrame:NSMakeRect(x, yFinal, [closeBtn frame].size.width, buttonH)];
+    [miniBtn
+        setFrame:NSMakeRect(
+                     x + spacing, yFinal, [miniBtn frame].size.width, [miniBtn frame].size.height)];
+    [zoomBtn setFrame:NSMakeRect(
+                          x + spacing * 2,
+                          yFinal,
+                          [zoomBtn frame].size.width,
+                          [zoomBtn frame].size.height)];
 }
 
 static void (*original_container_layout)(id, SEL);
@@ -98,9 +104,10 @@ static void installSwizzles(NSWindow *window) {
     if (containerCls)
         swizzleLayout(containerCls, (IMP)swizzled_container_layout, &original_container_layout);
 
-    NSView *themeFrame = window.contentView.superview;
+    NSView *themeFrame = [[window contentView] superview];
     if (themeFrame)
-        swizzleLayout([themeFrame class], (IMP)swizzled_themeframe_layout, &original_themeframe_layout);
+        swizzleLayout(
+            [themeFrame class], (IMP)swizzled_themeframe_layout, &original_themeframe_layout);
 }
 
 void setTrafficLightsPosition(void *window_ptr, double x, double y, double spacing) {

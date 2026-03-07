@@ -131,6 +131,8 @@ fn linkMacos(lib: *std.Build.Step.Compile) void {
         .files = &.{
             "src/platform/macos/window.m",
             "src/platform/macos/traffic_lights.m",
+            "src/platform/macos/webview.m",
+            "src/platform/macos/utils.m",
         },
         .flags = &.{"-fobjc-arc"},
     });

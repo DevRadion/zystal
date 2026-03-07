@@ -1,19 +1,9 @@
-// macos_window.m
+#import "utils.m"
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
-
-static NSWindow *windowFromPtr(void *window_ptr) { return (__bridge NSWindow *)window_ptr; }
+#import <WebKit/WebKit.h>
 
 static NSWindowStyleMask styleMaskFromTag(uint8_t tag) {
-    // borderless,
-    // titled,
-    // closable,
-    // miniaturizable,
-    // resizable,
-    // unified_title_and_toolbar,
-    // full_screen,
-    // full_size_content_view,
-
     switch (tag) {
     case 0:
         return NSWindowStyleMaskBorderless;
@@ -38,25 +28,32 @@ static NSWindowStyleMask styleMaskFromTag(uint8_t tag) {
 
 void insertStyleMask(void *window_ptr, uint8_t tag) {
     NSWindow *window = windowFromPtr(window_ptr);
-    window.styleMask |= styleMaskFromTag(tag);
+    [window setStyleMask:([window styleMask] | styleMaskFromTag(tag))];
 }
 
 void removeStyleMask(void *window_ptr, uint8_t tag) {
     NSWindow *window = windowFromPtr(window_ptr);
-    window.styleMask &= ~styleMaskFromTag(tag);
+    [window setStyleMask:([window styleMask] & ~styleMaskFromTag(tag))];
 }
 
 void setTitleVisibility(void *window_ptr, bool is_visible) {
     NSWindow *window = windowFromPtr(window_ptr);
-    window.titleVisibility = is_visible ? NSWindowTitleVisible : NSWindowTitleHidden;
+    [window setTitleVisibility:(is_visible ? NSWindowTitleVisible : NSWindowTitleHidden)];
 }
 
 void setTitleBarAppearsTransparent(void *window_ptr, bool is_appears_transparent) {
     NSWindow *window = windowFromPtr(window_ptr);
-    window.titlebarAppearsTransparent = is_appears_transparent;
+    [window setTitlebarAppearsTransparent:is_appears_transparent];
 }
 
 void setMovableByWindowBackground(void *window_ptr, bool is_movable) {
     NSWindow *window = windowFromPtr(window_ptr);
-    window.movableByWindowBackground = is_movable;
+    [window setMovableByWindowBackground:is_movable];
+}
+
+void setWindowBackgroundColor(void *window_ptr, double r, double g, double b, double a) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    NSColor *color = [NSColor colorWithSRGBRed:r green:g blue:b alpha:a];
+    [window setBackgroundColor:color];
+    [window setOpaque:(a >= 1.0)];
 }

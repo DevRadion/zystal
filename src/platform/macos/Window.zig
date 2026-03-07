@@ -46,3 +46,11 @@ pub fn setTrafficLightsPosition(self: *const Self, x: f64, y: f64, spacing: ?f64
 pub fn setMovableByWindowBackground(self: *const Self, is_movable: bool) void {
     objc.setMovableByWindowBackground(self.handle, is_movable);
 }
+
+pub fn setBackgroundColor(self: *const Self, r: f64, g: f64, b: f64, a: f64) void {
+    objc.setWindowBackgroundColor(self.handle, r, g, b, a);
+}
+
+pub fn setWebViewTransparent(self: *const Self) void {
+    objc.setWebViewTransparent(self.handle);
+}

@@ -19,12 +19,12 @@ function App() {
     }, []);
 
     return (
-        <main className="min-h-screen px-6 py-10 grid place-items-center select-none">
+        <main className="relative min-h-screen px-6 pb-10 pt-10 select-none">
             <div
-                className="h-10 bg-white w-full absolute top-0 left-0 right-0"
+                className="absolute left-0 top-0 h-10 w-full bg-white"
                 data-zystal-draggable
-            ></div>
-            <section className="w-full max-w-3xl text-center">
+            />
+            <section className="mx-auto flex w-full max-w-3xl flex-col items-center pt-12 text-center sm:pt-16">
                 <h1 className="m-0 text-7xl font-bold">Zystal</h1>
                 <p className="mx-auto mt-4 max-w-[56ch] text-lg font-medium">
                     Cross-platform self-contained web applications in Zig

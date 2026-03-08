@@ -28,37 +28,35 @@ pub fn initDragRegion(self: *Self, scripts_registry: *ScriptsRegistry) !void {
     try scripts_registry.registerScript(
         \\document.addEventListener('mousedown', function(e) {
         \\  if (e.button !== 0) return;
-        \\  let el = e.target;
+        \\  var el = e.target;
         \\  while (el) {
-        \\    if (el.hasAttribute && el.hasAttribute('data-zystal-no-drag')) return;
-        \\    if (el.hasAttribute && el.hasAttribute('data-zystal-draggable')) {
-        \\      e.preventDefault();
-        \\      __zystal_startDrag();
-        \\      return;
+        \\    if (el.hasAttribute) {
+        \\      if (el.hasAttribute('data-zystal-no-drag')) return;
+        \\      var tag = el.tagName;
+        \\      if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' ||
+        \\          tag === 'TEXTAREA' || tag === 'A' || el.isContentEditable) return;
+        \\      if (el.hasAttribute('data-zystal-draggable')) {
+        \\        e.preventDefault();
+        \\        __zystal_startDrag();
+        \\        return;
+        \\      }
         \\    }
         \\    el = el.parentElement;
         \\  }
         \\});
     );
 
-    const DragCtx = struct {
-        webview: *Self,
-    };
-
     const startDragFn = struct {
         fn callback(id: [*:0]const u8, _: [*:0]const u8, ctx: ?*anyopaque) callconv(.c) void {
-            const drag_ctx: *DragCtx = @ptrCast(@alignCast(ctx orelse return));
-            const handle = drag_ctx.webview.getNativeHandle() orelse return;
+            const self_ptr: *Self = @ptrCast(@alignCast(ctx orelse return));
+            const handle = self_ptr.getNativeHandle() orelse return;
             const window = Window.init(handle);
             window.startDragging();
-            drag_ctx.webview.webview_c.ret(std.mem.sliceTo(id, 0), 0, "null") catch {};
+            self_ptr.webview_c.ret(std.mem.sliceTo(id, 0), 0, "null") catch {};
         }
     }.callback;
 
-    const ctx = try self.allocator.create(DragCtx);
-    ctx.* = .{ .webview = self };
-
-    try self.webview_c.bind("__zystal_startDrag", startDragFn, ctx);
+    try self.webview_c.bind("__zystal_startDrag", startDragFn, self);
 }
 
 pub fn load(self: Self, host: [:0]const u8) !void {
@@ -78,6 +76,10 @@ pub fn getNativeHandle(self: *const Self) ?*anyopaque {
 }
 
 pub fn deinit(self: *Self) void {
+    if (self.getNativeHandle()) |handle| {
+        const window = Window.init(handle);
+        window.deinit();
+    }
     self.bind_manager.deinit();
     self.webview_c.destroy() catch return;
 }

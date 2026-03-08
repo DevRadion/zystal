@@ -204,7 +204,16 @@ void startDragging(void *window_ptr) {
 
     // Use the captured mouseDown event, fall back to currentEvent
     NSEvent *event = lastMouseDownEvent ?: [NSApp currentEvent];
-    if (event) {
+    lastMouseDownEvent = nil; // Clear after use to prevent stale drags
+    if (event && event.type == NSEventTypeLeftMouseDown) {
         [window performWindowDragWithEvent:event];
     }
+}
+
+void removeDragMonitor(void) {
+    if (mouseDownMonitor) {
+        [NSEvent removeMonitor:mouseDownMonitor];
+        mouseDownMonitor = nil;
+    }
+    lastMouseDownEvent = nil;
 }

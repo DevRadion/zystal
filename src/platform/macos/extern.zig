@@ -48,3 +48,4 @@ pub extern fn orderWindowBack(window_handle: *anyopaque) void;
 
 // Window dragging
 pub extern fn startDragging(window_handle: *anyopaque) void;
+pub extern fn removeDragMonitor() void;

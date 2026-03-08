@@ -27,6 +27,11 @@ pub fn init(handle: *anyopaque) Self {
     return .{ .handle = handle };
 }
 
+pub fn deinit(self: *const Self) void {
+    if (self.platform(.current())) |w|
+        w.deinit();
+}
+
 pub fn platform(self: *const Self, comptime platform_tag: PlatformTag) ?PlatformWindow(platform_tag) {
     if (comptime PlatformTag.current() == platform_tag) {
         return PlatformWindow(platform_tag).init(self.handle);
@@ -161,3 +166,4 @@ pub fn startDragging(self: *const Self) void {
     if (self.platform(.current())) |w|
         w.startDragging();
 }
+

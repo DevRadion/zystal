@@ -135,3 +135,7 @@ pub fn orderBack(self: *const Self) void {
 pub fn startDragging(self: *const Self) void {
     objc.startDragging(self.handle);
 }
+
+pub fn deinit(_: *const Self) void {
+    objc.removeDragMonitor();
+}

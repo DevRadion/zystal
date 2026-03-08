@@ -19,9 +19,9 @@ pub fn Channel(comptime DataType: type, comptime name: []const u8) type {
         ));
 
         name: []const u8,
-        sink: *EventSink,
+        sink: EventSink,
 
-        pub fn init(sink: *EventSink) Self {
+        pub fn init(sink: EventSink) Self {
             return .{
                 .name = name,
                 .sink = sink,

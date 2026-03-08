@@ -2,22 +2,20 @@ const Self = @This();
 
 const std = @import("std");
 const EventSink = @import("EventSink.zig");
-const ChannelMark = @import("channel.zig").ChannelMark;
+const WebView = @import("WebView.zig");
+const ChannelMark = @import("Channel.zig").ChannelMark;
 
 allocator: std.mem.Allocator,
-sink: EventSink,
-// Assuming we'll not have 100k channels, so arrays is ok :)
 registered: std.array_list.Managed([]u8),
 
-pub fn init(allocator: std.mem.Allocator, sink: EventSink) Self {
+pub fn init(allocator: std.mem.Allocator) Self {
     return .{
         .allocator = allocator,
-        .sink = sink,
         .registered = .init(allocator),
     };
 }
 
-pub fn registerChannel(self: *Self, ChannelType: type) !ChannelType {
+pub fn registerChannel(self: *Self, webview: *WebView, ChannelType: type) !ChannelType {
     comptime {
         if (!@hasDecl(ChannelType, "Mark") and ChannelType.Mark != ChannelMark) {
             @compileError("Use Channel type");
@@ -31,9 +29,10 @@ pub fn registerChannel(self: *Self, ChannelType: type) !ChannelType {
     }
 
     try self.registered.append(try self.allocator.dupe(u8, @typeName(ChannelType)));
-    return ChannelType.init(&self.sink);
+    return ChannelType.init(EventSink.init(self.allocator, webview));
 }
 
 pub fn deinit(self: *Self) void {
     for (self.registered.items) |registered| self.allocator.free(registered);
+    self.registered.deinit();
 }

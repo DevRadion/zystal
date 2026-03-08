@@ -1,39 +1,17 @@
 const std = @import("std");
-
-const webview_c_mod = @import("webview");
-
-const Logger = @import("../logger.zig").Logger;
-const ScriptsRegistry = @import("ScriptsRegistry.zig");
-
+const WebView = @import("WebView.zig");
 const Self = @This();
-
-const log = Logger("EventSink");
-
 allocator: std.mem.Allocator,
-webview_c: webview_c_mod.WebView,
+webview: *WebView,
 
-pub fn init(
-    allocator: std.mem.Allocator,
-    webview_c: webview_c_mod.WebView,
-    scripts_registry: *ScriptsRegistry,
-) !Self {
-    // Function to simplify event emit later
-    try scripts_registry.registerScript(
-        \\window.__nativeEmit = (name, detailJson) => {
-        \\  let detail;
-        \\  try { detail = detailJson ? JSON.parse(detailJson) : undefined; }
-        \\  catch { detail = detailJson; }
-        \\  window.dispatchEvent(new CustomEvent(name, { detail }));
-        \\};
-    );
-
+pub fn init(allocator: std.mem.Allocator, webview: *WebView) Self {
     return .{
         .allocator = allocator,
-        .webview_c = webview_c,
+        .webview = webview,
     };
 }
 
-pub fn emitEvent(self: *Self, name: []const u8, data: anytype) !void {
+pub fn emitEvent(self: *const Self, name: []const u8, data: anytype) !void {
     var buffer = std.Io.Writer.Allocating.init(self.allocator);
     defer buffer.deinit();
 
@@ -41,15 +19,5 @@ pub fn emitEvent(self: *Self, name: []const u8, data: anytype) !void {
     const json_string = try buffer.toOwnedSlice();
     defer self.allocator.free(json_string);
 
-    const js_string = try std.fmt.allocPrintSentinel(
-        self.allocator,
-        "window.__nativeEmit(\"{s}\", {s});",
-        .{ name, json_string },
-        0,
-    );
-    defer self.allocator.free(js_string);
-
-    log.debug("emitEvent -> name: {s}, data: {any}", .{ name, data });
-
-    try self.webview_c.eval(js_string);
+    try self.webview.emitSerializedEvent(name, json_string);
 }

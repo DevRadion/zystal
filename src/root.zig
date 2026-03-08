@@ -6,11 +6,9 @@ const asset_gen = @import("assets_gen");
 const AssetStore = @import("assets/AssetStore.zig");
 const ServerConfig = @import("models/ServerConfig.zig");
 const AssetServer = @import("server/AssetServer.zig");
-pub const Channel = @import("webview/channel.zig").Channel;
-const EventSink = @import("webview/EventSink.zig");
+pub const Channel = @import("webview/Channel.zig").Channel;
 const WebView = @import("webview/WebView.zig");
 const ChannelRegistry = @import("webview/ChannelRegistry.zig");
-const ScriptsRegistry = @import("webview/ScriptsRegistry.zig");
 const Window = @import("platform/Window.zig");
 
 const Self = @This();
@@ -24,7 +22,6 @@ webview: WebView,
 server_config: ServerConfig,
 asset_server: ?AssetServer,
 channel_registry: ChannelRegistry,
-scripts_registry: ScriptsRegistry,
 
 pub const Config = struct {
     dev_tools: bool,
@@ -53,25 +50,12 @@ pub fn init(allocator: std.mem.Allocator, config: Config) !Self {
     var webview = try WebView.init(allocator, config.dev_tools);
     errdefer webview.deinit();
 
-    var scripts_registry = ScriptsRegistry.init(
-        allocator,
-        webview.webview_c,
-    );
-
     return .{
         .arena = std.heap.ArenaAllocator.init(allocator),
         .webview = webview,
         .server_config = server_config,
         .asset_server = asset_server,
-        .channel_registry = ChannelRegistry.init(
-            allocator,
-            try EventSink.init(
-                allocator,
-                webview.webview_c,
-                &scripts_registry,
-            ),
-        ),
-        .scripts_registry = scripts_registry,
+        .channel_registry = ChannelRegistry.init(allocator),
     };
 }
 
@@ -92,10 +76,7 @@ pub fn start(self: *Self) !void {
 
     log.debug("Loading web page: {s}", .{frontend_host});
 
-    try self.webview.initDragRegion(&self.scripts_registry);
-    try self.scripts_registry.inject();
-    try self.webview.load(frontend_host);
-    try self.webview.run();
+    try self.webview.start(frontend_host);
 
     if (build_options.source_type == .built_assets) {
         if (self.asset_server) |*server| {
@@ -110,12 +91,11 @@ pub fn registerDecls(self: *Self, comptime Owner: type, owner: *Owner) !void {
 
 // Accepts Channel type with DataType and name specified
 pub fn registerChannel(self: *Self, ChannelType: type) !ChannelType {
-    return self.channel_registry.registerChannel(ChannelType);
+    return self.channel_registry.registerChannel(&self.webview, ChannelType);
 }
 
-pub fn window(self: *Self) ?Window {
-    const handle = self.webview.getNativeHandle() orelse return null;
-    return Window.init(handle);
+pub fn window(self: *Self) ?*Window {
+    return self.webview.window();
 }
 
 pub fn deinit(self: *Self) void {

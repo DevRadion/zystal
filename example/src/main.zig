@@ -51,7 +51,6 @@ fn customizeWindow(zystal: *Zystal) void {
         .origin = .{ .x = 0, .y = 0 },
     }, true, true);
     window.setMinSize(.{ .width = 400, .height = 300 });
-    window.setMaxSize(.{ .width = 900, .height = 800 });
 }
 
 pub fn main(init: std.process.Init) !void {

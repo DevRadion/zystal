@@ -5,12 +5,12 @@ const asset_gen = @import("assets_gen");
 
 const AssetStore = @import("assets/AssetStore.zig");
 const ServerConfig = @import("models/ServerConfig.zig");
-const WindowConfig = @import("models/WindowConfig.zig");
 const AssetServer = @import("server/AssetServer.zig");
 pub const Channel = @import("webview/channel.zig").Channel;
 const EventSink = @import("webview/EventSink.zig");
 const WebView = @import("webview/WebView.zig");
 const ChannelRegistry = @import("webview/ChannelRegistry.zig");
+const ScriptsRegistry = @import("webview/ScriptsRegistry.zig");
 const Window = @import("platform/Window.zig");
 
 const Self = @This();
@@ -24,9 +24,10 @@ webview: WebView,
 server_config: ServerConfig,
 asset_server: ?AssetServer,
 channel_registry: ChannelRegistry,
+scripts_registry: ScriptsRegistry,
 
 pub const Config = struct {
-    window: WindowConfig,
+    dev_tools: bool,
 };
 
 pub fn init(allocator: std.mem.Allocator, config: Config) !Self {
@@ -49,8 +50,13 @@ pub fn init(allocator: std.mem.Allocator, config: Config) !Self {
             asset_store,
         );
     }
-    var webview = try WebView.build(allocator, config.window);
+    var webview = try WebView.init(allocator, config.dev_tools);
     errdefer webview.deinit();
+
+    var scripts_registry = ScriptsRegistry.init(
+        allocator,
+        webview.webview_c,
+    );
 
     return .{
         .arena = std.heap.ArenaAllocator.init(allocator),
@@ -62,8 +68,10 @@ pub fn init(allocator: std.mem.Allocator, config: Config) !Self {
             try EventSink.init(
                 allocator,
                 webview.webview_c,
+                &scripts_registry,
             ),
         ),
+        .scripts_registry = scripts_registry,
     };
 }
 
@@ -84,6 +92,8 @@ pub fn start(self: *Self) !void {
 
     log.debug("Loading web page: {s}", .{frontend_host});
 
+    try self.webview.initDragRegion(&self.scripts_registry);
+    try self.scripts_registry.inject();
     try self.webview.load(frontend_host);
     try self.webview.run();
 

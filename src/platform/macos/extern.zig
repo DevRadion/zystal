@@ -45,3 +45,6 @@ pub extern fn restoreWindow(window_handle: *anyopaque) void;
 pub extern fn setAlwaysOnTop(window_handle: *anyopaque, on_top: bool) void;
 pub extern fn orderWindowFront(window_handle: *anyopaque) void;
 pub extern fn orderWindowBack(window_handle: *anyopaque) void;
+
+// Window dragging
+pub extern fn startDragging(window_handle: *anyopaque) void;

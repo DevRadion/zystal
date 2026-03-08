@@ -3,6 +3,7 @@ const std = @import("std");
 const webview_c_mod = @import("webview");
 
 const Logger = @import("../logger.zig").Logger;
+const ScriptsRegistry = @import("ScriptsRegistry.zig");
 
 const Self = @This();
 
@@ -11,9 +12,13 @@ const log = Logger("EventSink");
 allocator: std.mem.Allocator,
 webview_c: webview_c_mod.WebView,
 
-pub fn init(allocator: std.mem.Allocator, webview_c: webview_c_mod.WebView) !Self {
+pub fn init(
+    allocator: std.mem.Allocator,
+    webview_c: webview_c_mod.WebView,
+    scripts_registry: *ScriptsRegistry,
+) !Self {
     // Function to simplify event emit later
-    try webview_c.init(
+    try scripts_registry.registerScript(
         \\window.__nativeEmit = (name, detailJson) => {
         \\  let detail;
         \\  try { detail = detailJson ? JSON.parse(detailJson) : undefined; }

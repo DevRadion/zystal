@@ -20,6 +20,10 @@ function App() {
 
     return (
         <main className="min-h-screen px-6 py-10 grid place-items-center select-none">
+            <div
+                className="h-10 bg-white w-full absolute top-0 left-0 right-0"
+                data-zystal-draggable
+            ></div>
             <section className="w-full max-w-3xl text-center">
                 <h1 className="m-0 text-7xl font-bold">Zystal</h1>
                 <p className="mx-auto mt-4 max-w-[56ch] text-lg font-medium">

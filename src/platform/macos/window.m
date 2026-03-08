@@ -182,3 +182,29 @@ void orderWindowBack(void *window_ptr) {
     NSWindow *window = windowFromPtr(window_ptr);
     [window orderBack:nil];
 }
+
+// --- Window Dragging ---
+
+// Persistent monitor captures every mouseDown so we have the NSEvent
+// available when the async bind() callback fires from the webview.
+static id mouseDownMonitor = nil;
+static NSEvent *lastMouseDownEvent = nil;
+
+void startDragging(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+
+    // Lazily install a persistent mouseDown monitor
+    if (!mouseDownMonitor) {
+        mouseDownMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown
+                                                                handler:^NSEvent *(NSEvent *event) {
+            lastMouseDownEvent = event;
+            return event;
+        }];
+    }
+
+    // Use the captured mouseDown event, fall back to currentEvent
+    NSEvent *event = lastMouseDownEvent ?: [NSApp currentEvent];
+    if (event) {
+        [window performWindowDragWithEvent:event];
+    }
+}

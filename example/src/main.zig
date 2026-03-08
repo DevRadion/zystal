@@ -40,7 +40,6 @@ fn customizeWindow(zystal: *Zystal) void {
         macos.setTitleVisibility(false);
         macos.setTitleBarAppearsTransparent(true);
         macos.setTrafficLightsPosition(14, 14, null);
-        std.debug.print("RECT: {any}", .{macos.getRect()});
     }
 
     window.setMovableByWindowBackground(true);
@@ -60,11 +59,8 @@ pub fn main(init: std.process.Init) !void {
 
     // Main object initialization
     var zystal = try Zystal.init(allocator, .{
-        // Sets window parameters
-        .window = .{
-            // Enable dev tools or not
-            .dev_tools = true,
-        },
+        // Enable dev tools or not
+        .dev_tools = true,
     });
     defer zystal.deinit();
 

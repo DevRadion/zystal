@@ -1,3 +1,0 @@
-const Self = @This();
-
-dev_tools: bool,

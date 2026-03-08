@@ -155,3 +155,9 @@ pub fn orderBack(self: *const Self) void {
     if (self.platform(.current())) |w|
         w.orderBack();
 }
+
+// Window dragging
+pub fn startDragging(self: *const Self) void {
+    if (self.platform(.current())) |w|
+        w.startDragging();
+}

@@ -27,6 +27,7 @@ pub extern fn setWebViewTransparent(window_handle: *anyopaque) void;
 // Window constraints
 pub extern fn setMinSize(window_handle: *anyopaque, size: *const Size) void;
 pub extern fn setMaxSize(window_handle: *anyopaque, size: *const Size) void;
+pub extern fn center(window_handle: *anyopaque) void;
 
 // Window visibility
 pub extern fn showWindow(window_handle: *anyopaque) void;

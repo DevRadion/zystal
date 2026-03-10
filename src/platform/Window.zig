@@ -97,6 +97,14 @@ pub fn setMaxSize(self: *const Self, size: Size) void {
         w.setMaxSize(size);
 }
 
+pub fn setSize(self: *const Self, size: Size, animated: bool, display: bool) void {
+    if (self.platform(.current())) |w| {
+        var rect = w.getRect();
+        rect.size = size;
+        w.setRect(rect, animated, display);
+    }
+}
+
 // Window visibility
 pub fn show(self: *const Self) void {
     if (self.platform(.current())) |w|
@@ -161,9 +169,13 @@ pub fn orderBack(self: *const Self) void {
         w.orderBack();
 }
 
+pub fn center(self: *const Self) void {
+    if (self.platform(.current())) |w|
+        w.center();
+}
+
 // Window dragging
 pub fn startDragging(self: *const Self) void {
     if (self.platform(.current())) |w|
         w.startDragging();
 }
-

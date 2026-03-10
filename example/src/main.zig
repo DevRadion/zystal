@@ -46,11 +46,9 @@ fn customizeWindow(zystal: *Zystal) void {
     window.setWebViewTransparent();
     window.setBackgroundColor(0.0, 0.0, 0.0, 0.0);
     window.setTitle("Zystal");
-    window.setRect(.{
-        .size = .{ .width = 800, .height = 500 },
-        .origin = .{ .x = 0, .y = 0 },
-    }, true, true);
-    window.setMinSize(.{ .width = 400, .height = 300 });
+    window.setSize(.{ .width = 400, .height = 400 }, false, true);
+    window.setMinSize(.{ .width = 400, .height = 400 });
+    window.center();
 }
 
 pub fn main(init: std.process.Init) !void {

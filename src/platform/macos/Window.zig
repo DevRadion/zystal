@@ -131,6 +131,10 @@ pub fn orderBack(self: *const Self) void {
     objc.orderWindowBack(self.handle);
 }
 
+pub fn center(self: *const Self) void {
+    objc.center(self.handle);
+}
+
 // Window dragging
 pub fn startDragging(self: *const Self) void {
     objc.startDragging(self.handle);

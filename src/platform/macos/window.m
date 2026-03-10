@@ -49,8 +49,9 @@ void setTitle(void *window_ptr, const char *title) {
 
 void setRect(void *window_ptr, struct WRect *rect, bool animated, bool display) {
     NSWindow *window = windowFromPtr(window_ptr);
-    [window setFrame:(NSMakeRect(rect->origin.x, rect->origin.y, rect->size.width, rect->size.height))
-             display:(display)animate:(animated)];
+    [window
+        setFrame:(NSMakeRect(rect->origin.x, rect->origin.y, rect->size.width, rect->size.height))
+         display:(display)animate:(animated)];
 }
 
 void getRect(void *window_ptr, struct WRect *out) {
@@ -161,9 +162,12 @@ void toggleFullScreen(void *window_ptr) {
 
 void restoreWindow(void *window_ptr) {
     NSWindow *window = windowFromPtr(window_ptr);
-    if ([window isMiniaturized]) [window deminiaturize:nil];
-    if ([window styleMask] & NSWindowStyleMaskFullScreen) [window toggleFullScreen:nil];
-    if ([window isZoomed]) [window zoom:nil];
+    if ([window isMiniaturized])
+        [window deminiaturize:nil];
+    if ([window styleMask] & NSWindowStyleMaskFullScreen)
+        [window toggleFullScreen:nil];
+    if ([window isZoomed])
+        [window zoom:nil];
 }
 
 // --- Window Level/Ordering ---
@@ -183,6 +187,11 @@ void orderWindowBack(void *window_ptr) {
     [window orderBack:nil];
 }
 
+void center(void *window_ptr) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    [window center];
+}
+
 // --- Window Dragging ---
 
 // Persistent monitor captures every mouseDown so we have the NSEvent
@@ -195,11 +204,12 @@ void startDragging(void *window_ptr) {
 
     // Lazily install a persistent mouseDown monitor
     if (!mouseDownMonitor) {
-        mouseDownMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown
-                                                                handler:^NSEvent *(NSEvent *event) {
-            lastMouseDownEvent = event;
-            return event;
-        }];
+        mouseDownMonitor =
+            [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown
+                                                  handler:^NSEvent *(NSEvent *event) {
+                                                      lastMouseDownEvent = event;
+                                                      return event;
+                                                  }];
     }
 
     // Use the captured mouseDown event, fall back to currentEvent

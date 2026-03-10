@@ -1,4 +1,5 @@
 #import "utils.m"
+#import <QuartzCore/QuartzCore.h>
 #import <WebKit/WebKit.h>
 
 @interface ZystalWebViewContainerView : NSView
@@ -9,10 +10,21 @@
 
 @implementation ZystalWebViewContainerView
 
+- (void)setFrameSize:(NSSize)newSize {
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    [super setFrameSize:newSize];
+    [CATransaction commit];
+}
+
 - (void)layout {
     [super layout];
-    if (self.webView)
+    if (self.webView) {
+        [CATransaction begin];
+        [CATransaction setDisableActions:YES];
         [self.webView setFrame:[self bounds]];
+        [CATransaction commit];
+    }
 }
 
 @end
@@ -57,6 +69,10 @@ static void ensureWebViewFillsContentView(NSWindow *window) {
     [webView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [webView setFrame:[container bounds]];
     [container addSubview:webView];
+    [container setWantsLayer:YES];
+    [container.layer setBackgroundColor:CGColorGetConstantColor(kCGColorClear)];
+    [webView setWantsLayer:YES];
+    [webView.layer setBackgroundColor:CGColorGetConstantColor(kCGColorClear)];
 }
 
 void setWebViewTransparent(void *window_ptr) {

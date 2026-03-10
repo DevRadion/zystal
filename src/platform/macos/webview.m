@@ -84,3 +84,25 @@ void setWebViewTransparent(void *window_ptr) {
     [webView setValue:@(NO) forKey:@"drawsBackground"];
     [[webView enclosingScrollView] setDrawsBackground:NO];
 }
+
+void setVibrancy(void *window_ptr, NSInteger material) {
+    NSWindow *window = windowFromPtr(window_ptr);
+    ensureWebViewFillsContentView(window);
+
+    NSView *contentView = [window contentView];
+    if (![contentView isKindOfClass:[ZystalWebViewContainerView class]])
+        return;
+
+    for (NSView *subview in [[contentView subviews] copy]) {
+        if ([subview isKindOfClass:[NSVisualEffectView class]])
+            [subview removeFromSuperview];
+    }
+
+    NSVisualEffectView *vev = [[NSVisualEffectView alloc]
+        initWithFrame:[contentView bounds]];
+    [vev setMaterial:(NSVisualEffectMaterial)material];
+    [vev setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
+    [vev setState:NSVisualEffectStateActive];
+    [vev setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
+    [contentView addSubview:vev positioned:NSWindowBelow relativeTo:nil];
+}

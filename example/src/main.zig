@@ -40,14 +40,15 @@ fn customizeWindow(zystal: *Zystal) void {
         macos.setTitleVisibility(false);
         macos.setTitleBarAppearsTransparent(true);
         macos.setTrafficLightsPosition(14, 14, null);
+        macos.setVibrancy(.hud);
     }
 
     window.setMovableByWindowBackground(true);
     window.setWebViewTransparent();
     window.setBackgroundColor(0.0, 0.0, 0.0, 0.0);
     window.setTitle("Zystal");
-    window.setSize(.{ .width = 400, .height = 400 }, false, true);
-    window.setMinSize(.{ .width = 400, .height = 400 });
+    window.setSize(.{ .width = 800, .height = 600 }, false, true);
+    window.setMinSize(.{ .width = 600, .height = 400 });
     window.center();
 }
 

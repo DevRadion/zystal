@@ -19,7 +19,7 @@ function App() {
     }, []);
 
     return (
-        <main className="h-screen select-none backdrop-blur-2xl">
+        <main className="h-screen select-none">
             <div
                 className="absolute left-0 top-0 h-10 w-full"
                 data-zystal-draggable

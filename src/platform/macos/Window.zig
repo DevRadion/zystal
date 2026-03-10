@@ -16,6 +16,23 @@ pub const StyleMask = enum(u8) {
     full_size_content_view,
 };
 
+pub const VibrancyMaterial = enum(i64) {
+    titlebar = 3,
+    selection = 4,
+    menu = 5,
+    popover = 6,
+    sidebar = 7,
+    header_view = 10,
+    sheet = 11,
+    window_background = 12,
+    hud = 13,
+    fullscreen_ui = 15,
+    tooltip = 17,
+    content_background = 18,
+    under_window_background = 21,
+    under_page_background = 22,
+};
+
 handle: *anyopaque,
 
 pub fn init(handle: *anyopaque) Self {
@@ -69,6 +86,10 @@ pub fn setBackgroundColor(self: *const Self, r: f64, g: f64, b: f64, a: f64) voi
 
 pub fn setWebViewTransparent(self: *const Self) void {
     objc.setWebViewTransparent(self.handle);
+}
+
+pub fn setVibrancy(self: *const Self, material: VibrancyMaterial) void {
+    objc.setVibrancy(self.handle, @intFromEnum(material));
 }
 
 // Window constraints

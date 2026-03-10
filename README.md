@@ -54,13 +54,8 @@ pub fn main(init: std.process.Init) !void {
 
     // Main object initialization
     var zystal = try Zystal.init(allocator, .{
-        // Sets window parameters
-        .window = .{
-            .window_size = .{ .height = 720, .width = 1280 },
-            .window_title = "Zystal",
-            // Enable dev tools or not
-            .dev_tools = true,
-        },
+        // Enable dev tools or not
+        .dev_tools = true,
     });
     defer zystal.deinit();
 
@@ -76,6 +71,15 @@ pub fn main(init: std.process.Init) !void {
     // so you can call them from frontend
     // like an ordinary JavaScript function passing parameters to it
     try zystal.registerDecls(Commands, &commands);
+
+    // Access low-level window API without relying on configs... 
+    const window = zystal.window() orelse return;
+    window.setTitle("Zystal Demo");
+
+    // You can also setup window for specific platform using its APIs 
+    if (window.platform(.macos)) |macos| {
+        macos.setTitleVisibility(false);
+    }
 
     // Blocking function that runs webview and the asset server in parallel (if release mode)
     try zystal.start();
@@ -125,10 +129,3 @@ function App() {
 
 export default App;
 ```
-
-## TODO
-
-- [X] Enable communication from Zig to the frontend
-- [ ] Support running the app with a single command across npm, bun, and other package managers
-- [ ] Build a bundler that packages the executable into installable apps (icons, metadata, etc.)
-- [ ] ...
